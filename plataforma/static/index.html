@@ -4,82 +4,185 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CampusSense UNAB</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%230f766e'/><circle cx='16' cy='16' r='12' fill='none' stroke='%230f766e' stroke-width='2.5'/></svg>">
+<meta name="description" content="Centro de control IoT del campus UNAB: 12 dispositivos, 5 protocolos, retroceso y reglas en tiempo real.">
+<meta name="theme-color" content="#0b1215">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230b1215'/><circle cx='16' cy='16' r='4.5' fill='%2314b8a6'/><circle cx='16' cy='16' r='10' fill='none' stroke='%2314b8a6' stroke-width='2' stroke-dasharray='3.5 3'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="/static/style.css">
+<script>
+  try { const t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 </head>
 <body>
-<header>
-  <div class="marca">
-    <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="5" fill="currentColor"/><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="4 3"/></svg>
-    <div><h1>CampusSense UNAB</h1><p>IoT a la medida · monitoreo y control del campus El Jardín, Bucaramanga</p></div>
-  </div>
-  <nav>
-    <a href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Grafana</a>
-    <a href="/docs" target="_blank" rel="noopener">API</a>
-    <a href="#arquitectura">Arquitectura</a>
+<div class="fondo-red" aria-hidden="true"></div>
+
+<header class="barra">
+  <a class="marca" href="#inicio">
+    <svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><rect width="32" height="32" rx="9" class="marca-bg"/><circle cx="16" cy="16" r="4.5" class="marca-nucleo"/><circle cx="16" cy="16" r="10" class="marca-anillo"/></svg>
+    <span><b>CampusSense</b> <small>UNAB</small></span>
+  </a>
+  <nav class="menu" id="menu">
+    <a href="#flujo">Flujo</a>
+    <a href="#dispositivos">Dispositivos</a>
+    <a href="#mapa-sec">Mapa</a>
+    <a href="#protocolos">Protocolos</a>
+    <a href="#reglas">Reglas</a>
+    <a href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Grafana ↗</a>
+    <a href="/docs" target="_blank" rel="noopener">API ↗</a>
   </nav>
+  <div class="barra-der">
+    <span class="vivo" id="vivo" title="Conexión en tiempo real (Server-Sent Events)"><i></i><span id="vivo-txt">conectando…</span></span>
+    <button class="icono" id="tema" aria-label="Cambiar tema" title="Cambiar tema">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="sol" d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/><path class="luna" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+    </button>
+  </div>
 </header>
 
 <main>
-  <section class="kpis" id="kpis">
-    <div class="kpi"><span id="k-linea">–</span><small>dispositivos en línea</small></div>
-    <div class="kpi"><span id="k-alertas">–</span><small>alertas activas</small></div>
-    <div class="kpi"><span id="k-cmd">–</span><small>comandos enviados</small></div>
-    <div class="kpi"><span id="k-uptime">–</span><small>plataforma en marcha</small></div>
+  <!-- ============================================================ HERO -->
+  <section class="hero" id="inicio">
+    <div class="hero-txt">
+      <p class="ceja">Proyecto final · IoT + Cloud + Sistemas Distribuidos · UNAB</p>
+      <h1>El campus,<br><span class="degradado">en tiempo real.</span></h1>
+      <p class="lead">Doce dispositivos —sensores reales, gemelos digitales, APIs y datasets— hablan con una plataforma propia en Azure por
+        <b>MQTT, AMQP, STOMP, CoAP y HTTP</b>. Desde aquí se ve cada dato llegar y se le habla de vuelta a cada sensor.</p>
+      <div class="chips-hero">
+        <span>12 dispositivos</span><span>5 protocolos</span><span>retroceso bidireccional</span><span>7 reglas automáticas</span><span>HTTPS · Azure</span>
+      </div>
+      <div class="cta">
+        <a class="btn primario" href="#dispositivos">Controlar dispositivos</a>
+        <a class="btn" href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Abrir Grafana ↗</a>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><small>En línea</small><b><span id="k-linea">–</span><em>/12</em></b><div class="anillo" id="k-anillo"></div></div>
+      <div class="kpi"><small>Mensajes / min</small><b id="k-msg">–</b><canvas id="k-spark" height="38"></canvas></div>
+      <div class="kpi"><small>Alertas activas</small><b id="k-alertas">–</b><span class="nota" id="k-alertas-nota">sin alertas</span></div>
+      <div class="kpi"><small>Comandos enviados</small><b id="k-cmd">–</b><span class="nota" id="k-cmd-nota">–</span></div>
+    </div>
   </section>
 
-  <section>
-    <div class="titulo-seccion">
-      <h2>Dispositivos</h2>
-      <div class="filtros" id="filtros">
-        <button data-f="todos" class="activo">Todos</button>
-        <button data-f="real">Reales</button>
-        <button data-f="twin">Gemelos</button>
-        <button data-f="api">API</button>
-        <button data-f="dataset">Dataset</button>
+  <!-- ============================================================ FLUJO -->
+  <section class="tarjeta" id="flujo">
+    <div class="cab">
+      <div><h2>Flujo de datos en vivo</h2><p>Cada punto es un mensaje real: sube por su protocolo, pasa por el broker, el ingestor lo valida y queda en InfluxDB. Los naranjas son comandos de retroceso bajando al dispositivo.</p></div>
+      <div class="leyenda">
+        <span><i style="--c:var(--real)"></i>real</span><span><i style="--c:var(--twin)"></i>gemelo</span><span><i style="--c:var(--api)"></i>API</span>
+        <span><i style="--c:var(--dataset)"></i>dataset</span><span><i style="--c:var(--cmd)"></i>comando</span>
+      </div>
+    </div>
+    <div class="flujo-env"><svg id="flujo-svg" viewBox="0 0 1200 430" role="img" aria-label="Diagrama animado del flujo de datos"></svg></div>
+  </section>
+
+  <!-- ============================================================ DISPOSITIVOS -->
+  <section id="dispositivos">
+    <div class="titulo-sec">
+      <div><h2>Dispositivos</h2><p>Toca uno para ver sus gráficas y enviarle comandos.</p></div>
+      <div class="herramientas">
+        <div class="filtros" id="filtros" role="tablist">
+          <button data-f="todos" class="activo">Todos <em id="c-todos"></em></button>
+          <button data-f="real">Reales <em id="c-real"></em></button>
+          <button data-f="twin">Gemelos <em id="c-twin"></em></button>
+          <button data-f="api">API <em id="c-api"></em></button>
+          <button data-f="dataset">Dataset <em id="c-dataset"></em></button>
+        </div>
+        <input id="buscar" type="search" placeholder="Buscar…" aria-label="Buscar dispositivo">
       </div>
     </div>
     <div class="grilla" id="grilla"></div>
   </section>
 
-  <section class="dos-col">
-    <div>
-      <h2>Retroceso: comandos</h2>
-      <div class="tabla-env"><table id="t-cmd"><thead><tr><th>Hora</th><th>Dispositivo</th><th>Acción</th><th>Origen</th><th>Vía</th><th>ACK</th></tr></thead><tbody></tbody></table></div>
+  <!-- ============================================================ MAPA + CONSOLA -->
+  <section class="dos" id="mapa-sec">
+    <div class="tarjeta sin-pad">
+      <div class="cab pad"><div><h2>Campus El Jardín</h2><p>Bus Ruta 1 en vivo (GPS) y nodos del campus (ubicación ilustrativa).</p></div><span class="pildora" id="bus-estado">bus: –</span></div>
+      <div id="mapa"></div>
     </div>
-    <div>
-      <h2>Alertas</h2>
-      <div class="tabla-env"><table id="t-alertas"><thead><tr><th>Hora</th><th>Regla</th><th>Estado</th><th>Mensaje</th></tr></thead><tbody></tbody></table></div>
+    <div class="tarjeta consola-t">
+      <div class="cab"><div><h2>Consola</h2><p>Eventos de la plataforma, tal como llegan.</p></div>
+        <div class="filtros chicos" id="c-filtros"><button data-c="todo" class="activo">todo</button><button data-c="dato">datos</button><button data-c="cmd">retroceso</button><button data-c="alerta">alertas</button><button id="pausa" title="Pausar">❚❚</button></div>
+      </div>
+      <ol class="consola" id="consola" aria-live="off"></ol>
     </div>
   </section>
 
-  <section>
-    <h2>Reglas automáticas</h2>
-    <div class="tabla-env"><table id="t-reglas"><thead><tr><th>ID</th><th>Regla</th><th>Condición</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
+  <!-- ============================================================ PROTOCOLOS -->
+  <section id="protocolos">
+    <div class="titulo-sec"><div><h2>Protocolos</h2><p>Última hora de subida y tiempo de ida y vuelta de los ACK de comandos.</p></div></div>
+    <div class="protos" id="protos"></div>
   </section>
 
-  <section id="arquitectura">
-    <h2>Arquitectura de referencia</h2>
-    <img src="/static/arquitectura.png" alt="Arquitectura de referencia de CampusSense UNAB" class="arq" onerror="this.style.display='none'">
+  <!-- ============================================================ REGLAS + ALERTAS -->
+  <section class="dos" id="reglas">
+    <div class="tarjeta">
+      <div class="cab"><div><h2>Reglas automáticas</h2><p>El motor evalúa cada 30 s y actúa solo sobre los dispositivos.</p></div></div>
+      <ul class="reglas" id="l-reglas"></ul>
+    </div>
+    <div class="tarjeta">
+      <div class="cab"><div><h2>Alertas</h2><p>Motor de reglas y Grafana Alerting.</p></div></div>
+      <ul class="alertas" id="l-alertas"></ul>
+    </div>
+  </section>
+
+  <section class="tarjeta" id="comandos">
+    <div class="cab"><div><h2>Historial de retroceso</h2><p>Cada comando, por dónde viajó y la respuesta del dispositivo.</p></div></div>
+    <div class="tabla-env"><table id="t-cmd"><thead><tr><th>Hora</th><th>Dispositivo</th><th>Comando</th><th>Origen</th><th>Vía</th><th>ACK</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="tarjeta" id="arquitectura">
+    <div class="cab"><div><h2>Arquitectura de referencia</h2><p>Dispositivos → protocolos → brokers → procesamiento → almacenamiento → visualización, todo en una VM de Azure con URL propia.</p></div></div>
+    <a href="/static/arquitectura.png" target="_blank" rel="noopener"><img src="/static/arquitectura.png" alt="Arquitectura de referencia de CampusSense UNAB" class="arq" loading="lazy"></a>
   </section>
 </main>
 
-<dialog id="panel">
-  <form method="dialog" id="f-cmd">
-    <div class="panel-cab"><h3 id="p-titulo">Dispositivo</h3><button value="cancel" class="cerrar" aria-label="Cerrar">×</button></div>
-    <p class="sub" id="p-sub"></p>
-    <div id="p-valores" class="valores"></div>
-    <h4>Enviar comando</h4>
-    <label>Acción <select id="p-accion"></select></label>
-    <p class="ayuda" id="p-ayuda"></p>
-    <label>Parámetros (JSON) <textarea id="p-params" rows="3" spellcheck="false">{}</textarea></label>
-    <label>Clave de control <input id="p-clave" type="password" autocomplete="off" placeholder="la entrega el grupo en la sustentación"></label>
-    <div class="acciones"><button type="button" id="p-enviar" class="primario">Enviar comando</button></div>
-    <pre id="p-resp" class="resp"></pre>
-  </form>
-</dialog>
+<footer>
+  <div><b>CampusSense UNAB</b> · Proyecto final IoT + Cloud + Sistemas Distribuidos · Universidad Autónoma de Bucaramanga</div>
+  <div>Daniel Villamizar · Tomás Urieles · David Guerrero · <a href="https://github.com/Daniverd15/CampusSense-IoT" target="_blank" rel="noopener">GitHub</a></div>
+</footer>
 
-<footer>Proyecto final IoT + Cloud + Sistemas Distribuidos · UNAB · Daniel Villamizar · Tomás Urieles · David Guerrero</footer>
+<!-- ============================================================ PANEL DE DISPOSITIVO -->
+<div class="velo" id="velo" hidden></div>
+<aside class="panel" id="panel" aria-hidden="true" aria-labelledby="p-nombre">
+  <header class="panel-cab">
+    <div>
+      <div class="p-chips" id="p-chips"></div>
+      <h3 id="p-nombre">Dispositivo</h3>
+      <p id="p-sub"></p>
+    </div>
+    <button class="icono" id="p-cerrar" aria-label="Cerrar">✕</button>
+  </header>
+  <div class="panel-cuerpo">
+    <div class="p-estado" id="p-estado"></div>
+    <div class="p-sec">
+      <div class="p-sec-cab"><h4>Gráficas</h4>
+        <div class="filtros chicos" id="p-rango"><button data-h="1">1 h</button><button data-h="6">6 h</button><button data-h="24" class="activo">24 h</button><button data-h="96">4 d</button><button data-h="144">6 d</button></div>
+      </div>
+      <div class="p-graficas" id="p-graficas"></div>
+    </div>
+    <div class="p-sec">
+      <div class="p-sec-cab"><h4>Retroceso</h4><span class="nota" id="p-via"></span></div>
+      <div class="controles" id="p-controles"></div>
+      <label class="clave">Clave de control
+        <input id="p-clave" type="password" autocomplete="off" placeholder="la entrega el grupo en la sustentación"></label>
+      <details class="avanzado"><summary>Comando avanzado (JSON)</summary>
+        <div class="fila"><select id="p-accion"></select><button class="btn chico" id="p-json-enviar">Enviar</button></div>
+        <textarea id="p-params" rows="2" spellcheck="false">{}</textarea>
+        <p class="nota" id="p-ayuda"></p>
+      </details>
+    </div>
+    <div class="p-sec">
+      <h4>Últimos comandos de este dispositivo</h4>
+      <ul class="p-cmds" id="p-cmds"></ul>
+    </div>
+  </div>
+</aside>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

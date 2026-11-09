@@ -2,7 +2,9 @@
 #   /grafana/*  -> Grafana (servido desde subruta)
 #   /*          -> API FastAPI (front, /api, /docs)
 {$DOMINIO} {
-	encode gzip
+	# el stream SSE no se comprime: gzip lo retiene en el buffer y rompe el tiempo real
+	@comprimible not path /api/stream
+	encode @comprimible gzip
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff

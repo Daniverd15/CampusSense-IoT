@@ -55,6 +55,15 @@ curl -X POST https://campussense-unab.northcentralus.cloudapp.azure.com/api/disp
   -d '{"accion": "setpoint", "params": {"valor": 22}}'
 ```
 
+## Front: centro de control en tiempo real
+
+La URL principal abre un panel propio (HTML + JS sin framework, Chart.js y Leaflet) alimentado por **Server-Sent Events** (`/api/stream`):
+
+- **Flujo de datos en vivo:** cada mensaje real se anima desde su grupo de dispositivos, por su protocolo y broker, hasta InfluxDB; los comandos de retroceso bajan en naranja.
+- **Tarjetas de los 12 dispositivos** con valor principal, sparkline de 6 h y estado (en línea, apagado por comando, intervalo).
+- **Panel de cada dispositivo:** gráficas de 1 h a 6 días con mínimo, promedio y máximo, y controles visuales de retroceso (interruptor, intervalo, calibración, setpoint, modo, bomba, extractor, LED, límite, velocidad) con confirmación del ACK y su tiempo de ida y vuelta.
+- **Mapa** del campus con el bus de la Ruta 1 en vivo y su recorrido; **consola** de eventos; métricas por **protocolo**; **reglas** y **alertas** al instante; tema claro y oscuro.
+
 ## Procesamiento, reglas y visualización
 
 - **Ingestor:** valida el rango físico de cada variable, escribe en InfluxDB y republica en `campus/datos/<id>` (bus interno del que leen los gemelos y la API).

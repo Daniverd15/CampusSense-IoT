@@ -42,6 +42,19 @@ pendientes_http = collections.defaultdict(list)
 historial_cmd = collections.deque(maxlen=300)
 historial_alertas = collections.deque(maxlen=300)
 lock = threading.Lock()
+suscriptores = set()                           # (loop, cola) de cada cliente del stream SSE
+
+
+def emitir(evento):
+    """Reenvia un evento a todos los navegadores conectados a /api/stream (se llama desde hilos)."""
+    for loop, cola in list(suscriptores):
+        def poner(c=cola):
+            if c.qsize() < 400:
+                c.put_nowait(evento)
+        try:
+            loop.call_soon_threadsafe(poner)
+        except RuntimeError:
+            suscriptores.discard((loop, cola))
 
 # --------------------------------------------------------------------------- MQTT (bus de la plataforma)
 bus = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="api", protocol=mqtt.MQTTv311)
@@ -59,22 +72,33 @@ def _on_message(cl, ud, msg):
     except ValueError:
         return
     dev = msg.topic.split("/")[-1]
+    evento = None
     with lock:
         if msg.topic.startswith("campus/datos/"):
             ult[dev] = m
             t = m.get("ts", 0) / 1000
             for k, v in (m.get("v") or {}).items():
                 ventanas[(dev, k)].append((t, v))
+            evento = {"t": "dato", "id": dev, "tipo": m.get("tipo"), "proto": m.get("protocolo"), "ts": m.get("ts"),
+                      "seq": m.get("seq"), "v": m.get("v"), "estado": m.get("estado"),
+                      "lat_ms": max(0, m.get("recibido_ms", 0) - m.get("ts", 0))}
         elif msg.topic.startswith("campus/estado/"):
             est[dev] = m.get("estado", {})
         elif msg.topic.startswith("campus/conexion/"):
             conexion[dev] = bool(m.get("conectado"))
+            evento = {"t": "conexion", "id": dev, "conectado": conexion[dev], "ts": int(time.time() * 1000)}
         elif msg.topic.startswith("campus/acks/"):
             a = m.get("ack", {})
+            rtt = None
             for c in historial_cmd:
                 if c["cmd_id"] == a.get("cmd_id"):
-                    c["ack"] = {"ok": a.get("ok"), "detalle": a.get("detalle"),
-                                "rtt_ms": m.get("recibido_ms", 0) - (c["ts"] or 0)}
+                    rtt = m.get("recibido_ms", 0) - (c["ts"] or 0)
+                    c["ack"] = {"ok": a.get("ok"), "detalle": a.get("detalle"), "rtt_ms": rtt}
+            evento = {"t": "ack", "id": dev, "proto": m.get("protocolo"), "ts": m.get("ts"), "cmd_id": a.get("cmd_id"),
+                      "accion": a.get("accion"), "ok": a.get("ok"), "detalle": a.get("detalle"), "rtt_ms": rtt,
+                      "estado": m.get("estado")}
+    if evento:
+        emitir(evento)
 
 
 bus.on_connect, bus.on_message = _on_connect, _on_message
@@ -159,6 +183,10 @@ def enviar_comando(dev, accion, params, origen="manual"):
             pass
     with lock:
         historial_cmd.appendleft(registro)
+    emitir(dict(registro, t="cmd"))
+    if registro["ack"]:                       # CoAP: el ACK llega en la misma respuesta
+        emitir({"t": "ack", "id": dev, "proto": proto, "ts": int(time.time() * 1000), "cmd_id": cmd["cmd_id"],
+                "accion": accion, **registro["ack"]})
     tsdb.escribir([tsdb.linea("comandos", {"dispositivo": dev, "accion": accion, "origen": origen, "protocolo": proto},
                               {"cmd_id": cmd["cmd_id"], "params": json.dumps(params or {}), "via": via}, cmd["ts"])])
     log("CMD", "%s -> %s %s (%s) via %s" % (origen, dev, accion, json.dumps(params or {}), via))
@@ -184,6 +212,7 @@ def alerta(clave, regla, dev, severidad, mensaje, valor, activa, origen="reglas"
         activas.pop(clave, None)
     with lock:
         historial_alertas.appendleft(a)
+    emitir(dict(a, t="alerta"))
     tsdb.escribir([tsdb.linea("alertas", {"regla": regla, "dispositivo": dev, "severidad": severidad, "origen": origen},
                               {"estado": estado, "activa": 1.0 if activa else 0.0, "mensaje": mensaje,
                                "valor": float(valor) if isinstance(valor, (int, float)) else None}, ahora)])
@@ -411,6 +440,134 @@ def salud():
     return {"ok": True, "inicio": INICIO, "uptime_s": round(time.time() - INICIO), "dispositivos": len(DISPOSITIVOS),
             "en_linea": sum(1 for d in DISPOSITIVOS if _vista(d)["en_linea"]), "alertas_activas": len(activas),
             "ingesta_http": tsdb.cuenta.get("http", 0)}
+
+
+def _iso_ms(s):
+    import datetime as dt
+    return int(dt.datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp() * 1000)
+
+
+def _clave_alerta(regla, dev, origen):
+    if origen == "grafana":
+        return "G:%s:%s" % (regla, dev)
+    r = regla.split()[0]
+    return r + ":" + dev if r == "R6" else r
+
+
+def cargar_historial():
+    """Al arrancar recupera de InfluxDB comandos, ACK y alertas: el historial sobrevive a reinicios de la API."""
+    b = tsdb.BUCKET
+    try:
+        cmds = tsdb.consulta('from(bucket:"%s") |> range(start:-14d) |> filter(fn:(r)=> r._measurement=="comandos")'
+                             ' |> pivot(rowKey:["_time","dispositivo","accion","origen","protocolo"], columnKey:["_field"], valueColumn:"_value")'
+                             ' |> group() |> sort(columns:["_time"], desc:true) |> limit(n:300)' % b)
+        acks = {r.get("cmd_id"): r for r in tsdb.consulta(
+            'from(bucket:"%s") |> range(start:-14d) |> filter(fn:(r)=> r._measurement=="ack")'
+            ' |> pivot(rowKey:["_time","dispositivo","accion","protocolo"], columnKey:["_field"], valueColumn:"_value") |> group()' % b)}
+        alertas = tsdb.consulta('from(bucket:"%s") |> range(start:-30d) |> filter(fn:(r)=> r._measurement=="alertas")'
+                                ' |> pivot(rowKey:["_time","regla","dispositivo","severidad","origen"], columnKey:["_field"], valueColumn:"_value")'
+                                ' |> group() |> sort(columns:["_time"])' % b)
+    except Exception as e:
+        log("API", "no se pudo cargar el historial: %s" % e)
+        return
+    with lock:
+        historial_cmd.clear()
+        for r in cmds:
+            a = acks.get(r.get("cmd_id"))
+            rtt = a.get("rtt_ms") if a else None
+            historial_cmd.append({"cmd_id": r.get("cmd_id"), "accion": r["accion"], "params": json.loads(r.get("params") or "{}"),
+                                  "origen": r["origen"], "ts": _iso_ms(r["_time"]), "dispositivo": r["dispositivo"],
+                                  "protocolo": r["protocolo"], "via": r.get("via", ""),
+                                  "ack": {"ok": a.get("ok") == "true", "detalle": a.get("detalle"),
+                                          "rtt_ms": int(float(rtt)) if rtt else None} if a else None})
+        historial_alertas.clear()
+        for r in alertas:
+            al = {"ts": _iso_ms(r["_time"]), "regla": r["regla"], "dispositivo": r["dispositivo"], "severidad": r["severidad"],
+                  "estado": r.get("estado"), "mensaje": r.get("mensaje"), "valor": float(r["valor"]) if r.get("valor") else None,
+                  "origen": r["origen"]}
+            historial_alertas.appendleft(al)
+            k = _clave_alerta(r["regla"], r["dispositivo"], r["origen"])
+            if al["estado"] == "firing":
+                activas[k] = al
+            else:
+                activas.pop(k, None)
+    memoria["R1"], memoria["R2"] = "R1" in activas, "R2" in activas
+    log("API", "historial recuperado: %d comandos, %d alertas (%d activas)" % (len(historial_cmd), len(historial_alertas), len(activas)))
+
+
+threading.Thread(target=cargar_historial, daemon=True).start()
+
+
+@app.get("/api/stream")
+async def stream(request: Request):
+    """Server-Sent Events: cada dato, comando, ACK, alerta y cambio de conexion en tiempo real."""
+    import asyncio
+    from fastapi.responses import StreamingResponse
+    cola = asyncio.Queue()
+    par = (asyncio.get_running_loop(), cola)
+    suscriptores.add(par)
+
+    async def eventos():
+        try:
+            yield "retry: 3000\n\n"
+            while not await request.is_disconnected():
+                try:
+                    ev = await asyncio.wait_for(cola.get(), 15)
+                    yield "data: %s\n\n" % json.dumps(ev, ensure_ascii=False)
+                except asyncio.TimeoutError:
+                    yield ": latido\n\n"
+        finally:
+            suscriptores.discard(par)
+
+    return StreamingResponse(eventos(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.get("/api/historia/{dev}")
+def historia(dev: str, horas: float = 24, puntos: int = 160):
+    """Series agregadas de todas las variables de un dispositivo (para graficas del front)."""
+    if dev not in DISPOSITIVOS:
+        raise HTTPException(404, "dispositivo desconocido")
+    horas = max(0.25, min(horas, 24 * 14))
+    paso = max(15, int(horas * 3600 / max(20, min(puntos, 600))))
+    filas = tsdb.consulta('from(bucket:"%s") |> range(start:-%dm) |> filter(fn:(r)=> r._measurement=="telemetria" and r.dispositivo=="%s"'
+                          ' and r._field!="seq" and r._field!="lat_ms") |> aggregateWindow(every:%ds, fn:mean, createEmpty:false)'
+                          ' |> keep(columns:["_time","_field","_value"])' % (tsdb.BUCKET, int(horas * 60), dev, paso))
+    out = {}
+    for r in filas:
+        try:
+            out.setdefault(r["_field"], []).append([_iso_ms(r["_time"]), round(float(r["_value"]), 4)])
+        except (KeyError, ValueError):
+            continue
+    for v in out.values():
+        v.sort()
+    return {"dispositivo": dev, "horas": horas, "paso_s": paso, "series": out}
+
+
+_cache_proto = {"t": 0, "datos": None}
+
+
+@app.get("/api/protocolos")
+def protocolos():
+    """Mensajes por minuto y latencia de la ultima hora + RTT de los ACK, por protocolo (cache 30 s)."""
+    if _cache_proto["datos"] and time.time() - _cache_proto["t"] < 30:
+        return _cache_proto["datos"]
+    b = tsdb.BUCKET
+    base = 'from(bucket:"%s") |> range(start:-1h) |> filter(fn:(r)=> r._measurement=="telemetria" and r._field=="%s") |> group(columns:["protocolo"])'
+    res = {p: {"dispositivos": [d for d, r in DISPOSITIVOS.items() if r["protocolo"] == p]} for p in ("mqtt", "amqp", "stomp", "coap", "http")}
+    try:
+        for r in tsdb.consulta(base % (b, "seq") + " |> count()"):
+            res.setdefault(r["protocolo"], {})["msg_min"] = round(float(r["_value"]) / 60, 2)
+        for r in tsdb.consulta(base % (b, "lat_ms") + " |> mean()"):
+            res.setdefault(r["protocolo"], {})["latencia_ms"] = round(float(r["_value"]), 1)
+        for fn in ("mean", "count"):
+            for r in tsdb.consulta('from(bucket:"%s") |> range(start:-30d) |> filter(fn:(r)=> r._measurement=="ack" and r._field=="rtt_ms")'
+                                   ' |> group(columns:["protocolo"]) |> %s()' % (b, fn)):
+                res.setdefault(r["protocolo"], {})["rtt_ms" if fn == "mean" else "acks"] = round(float(r["_value"]), 1)
+    except Exception as e:
+        log("API", "protocolos: %s" % e)
+    _cache_proto.update(t=time.time(), datos=res)
+    return res
 
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
