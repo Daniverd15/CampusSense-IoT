@@ -103,6 +103,14 @@ docker compose ps             # 12 contenedores Up / healthy
 
 ESP32 en Wokwi: `MQTT_USER=esp32 MQTT_PASS=<clave> WOKWI_CLI_TOKEN=<token> ./wokwi/build_y_simular.sh 600`.
 
+## Robustez
+
+- **Guardar y reenviar:** los enlaces AMQP y HTTP guardan en cola lo que no pudieron enviar (hasta 2000 mensajes) y lo reenvían en el siguiente envío. Probado reiniciando la API: la planta solar no perdió ningún dato.
+- **Heartbeats AMQP:** un hilo atiende la conexión de publicación de `pika` para que RabbitMQ no la cierre entre envíos.
+- **MQTT:** QoS 1 con sesión persistente y última voluntad; el ingestor solo confirma después de escribir en InfluxDB.
+- **Estado persistente:** cada dispositivo guarda en un volumen su encendido, intervalo, calibración y estado propio; un reinicio no borra lo que se le ordenó.
+- **Historial:** comandos, ACK y alertas viven en InfluxDB y la API los recupera al arrancar.
+
 ## Seguridad
 
 - Sin secretos en el repositorio: todas las claves van en `.env` (ignorado por git); `.env.example` solo trae marcadores.

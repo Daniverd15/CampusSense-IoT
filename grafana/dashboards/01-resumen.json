@@ -31,7 +31,7 @@
      "uid": "influx-campus"
     },
     "enable": true,
-    "iconColor": "#e8590c",
+    "iconColor": "#F59C00",
     "target": {
      "refId": "Anno",
      "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
@@ -44,7 +44,7 @@
      "uid": "influx-campus"
     },
     "enable": true,
-    "iconColor": "#c92a2a",
+    "iconColor": "#C2253A",
     "target": {
      "refId": "Alr",
      "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"mensaje\")\n  |> map(fn: (r) => ({_time: r._time, text: r.regla + \" [\" + r.dispositivo + \"]: \" + r._value}))"
@@ -112,15 +112,15 @@
       "mode": "absolute",
       "steps": [
        {
-        "color": "#c92a2a",
+        "color": "#C2253A",
         "value": null
        },
        {
-        "color": "#f08c00",
+        "color": "#F59C00",
         "value": 9
        },
        {
-        "color": "#2f9e44",
+        "color": "#6D2CA0",
         "value": 11
        }
       ]
@@ -175,7 +175,7 @@
      "displayName": "${__field.labels.serie}",
      "color": {
       "mode": "fixed",
-      "fixedColor": "#0f766e"
+      "fixedColor": "#6D2CA0"
      }
     },
     "overrides": []
@@ -232,11 +232,11 @@
       "mode": "absolute",
       "steps": [
        {
-        "color": "#2f9e44",
+        "color": "#6D2CA0",
         "value": null
        },
        {
-        "color": "#c92a2a",
+        "color": "#C2253A",
         "value": 1
        }
       ]
@@ -291,7 +291,7 @@
      "displayName": "${__field.labels.serie}",
      "color": {
       "mode": "fixed",
-      "fixedColor": "#e8590c"
+      "fixedColor": "#F59C00"
      }
     },
     "overrides": []
@@ -442,7 +442,23 @@
       "mode": "palette-classic"
      }
     },
-    "overrides": []
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     }
+    ]
    },
    "options": {
     "legend": {

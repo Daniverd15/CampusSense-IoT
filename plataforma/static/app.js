@@ -62,6 +62,7 @@ const E = {
   reglas: [], comandos: [], anaDisp: "aula-101", anaHoras: 24,
 };
 const acksVistos = new Set();
+const acksRecientes = new Map();   // el ACK puede llegar por SSE antes que la respuesta del POST
 
 // ================================================================== tema y toasts
 $("#tema").addEventListener("click", () => {
@@ -330,6 +331,7 @@ function manejar(ev) {
   } else if (ev.t === "ack") {
     if (ev.cmd_id && acksVistos.has(ev.cmd_id)) return;
     if (ev.cmd_id) { acksVistos.add(ev.cmd_id); if (acksVistos.size > 500) acksVistos.clear(); }
+    if (ev.cmd_id) { acksRecientes.set(ev.cmd_id, ev); if (acksRecientes.size > 200) acksRecientes.delete(acksRecientes.keys().next().value); }
     const d = E.disp[ev.id]; if (d && ev.estado) d.estado = ev.estado;
     consola("ack", `<b>${esc(ev.id)}</b> ${ev.ok ? "aceptó" : "rechazó"} ${esc(ev.accion)}: ${esc(ev.detalle)} <i>· ${fmtMs(ev.rtt_ms)}</i>`);
     if (E.pendientes[ev.cmd_id]) { delete E.pendientes[ev.cmd_id]; toast(`${ev.ok ? "El dispositivo aceptó" : "El dispositivo rechazó"}: ${ev.accion}`, `${ev.id} · ${ev.detalle} · ida y vuelta ${fmtMs(ev.rtt_ms)}`, ev.ok ? "ok" : "mal"); }
@@ -547,7 +549,10 @@ async function enviar(accion, params, boton) {
   try {
     const r = await api(`/api/dispositivos/${encodeURIComponent(id)}/comando`, { method: "POST", headers: { "Content-Type": "application/json", "X-Clave": clave }, body: JSON.stringify({ accion, params }) });
     if (r.ack) { acksVistos.add(r.cmd_id); toast(`${r.ack.ok ? "El dispositivo aceptó" : "El dispositivo rechazó"}: ${accion}`, `${id} · ${r.ack.detalle} · ida y vuelta ${fmtMs(r.ack.rtt_ms)}`, r.ack.ok ? "ok" : "mal"); }
-    else { E.pendientes[r.cmd_id] = true; toast(`Comando enviado: ${accion}`, r.via, "cmd"); }
+    else if (acksRecientes.has(r.cmd_id)) {
+      const a = acksRecientes.get(r.cmd_id);
+      toast(`${a.ok ? "El dispositivo aceptó" : "El dispositivo rechazó"}: ${accion}`, `${id} · ${a.detalle} · ida y vuelta ${fmtMs(a.rtt_ms)}`, a.ok ? "ok" : "mal");
+    } else { E.pendientes[r.cmd_id] = true; toast(`Comando enviado: ${accion}`, r.via, "cmd"); }
   } catch (e) {
     if (e.status === 401) { toast("Clave de control incorrecta", "El comando no salió de la plataforma.", "mal"); guardar("clave", ""); $("#p-clave").select(); }
     else toast(`No se pudo enviar (${e.status || "red"})`, e.cuerpo?.detail || e.message, "mal");

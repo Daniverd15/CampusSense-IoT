@@ -31,7 +31,7 @@
      "uid": "influx-campus"
     },
     "enable": true,
-    "iconColor": "#e8590c",
+    "iconColor": "#F59C00",
     "target": {
      "refId": "Anno",
      "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
@@ -44,7 +44,7 @@
      "uid": "influx-campus"
     },
     "enable": true,
-    "iconColor": "#c92a2a",
+    "iconColor": "#C2253A",
     "target": {
      "refId": "Alr",
      "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"mensaje\")\n  |> map(fn: (r) => ({_time: r._time, text: r.regla + \" [\" + r.dispositivo + \"]: \" + r._value}))"
@@ -136,7 +136,7 @@
      "displayName": "${__field.labels.serie}",
      "color": {
       "mode": "fixed",
-      "fixedColor": "#0f766e"
+      "fixedColor": "#6D2CA0"
      }
     },
     "overrides": []
@@ -204,7 +204,7 @@
      "displayName": "${__field.labels.serie}",
      "color": {
       "mode": "fixed",
-      "fixedColor": "#0f766e"
+      "fixedColor": "#6D2CA0"
      }
     },
     "overrides": []
@@ -272,7 +272,7 @@
      "displayName": "${__field.labels.serie}",
      "color": {
       "mode": "fixed",
-      "fixedColor": "#0f766e"
+      "fixedColor": "#6D2CA0"
      }
     },
     "overrides": []
@@ -359,6 +359,36 @@
      }
     },
     "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "B"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F59C00"
+        }
+       }
+      ]
+     },
      {
       "matcher": {
        "id": "byName",
@@ -450,6 +480,36 @@
     "overrides": [
      {
       "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "B"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F59C00"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
        "id": "byName",
        "options": "humedad (%)"
       },
@@ -520,7 +580,23 @@
       "mode": "palette-classic"
      }
     },
-    "overrides": []
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     }
+    ]
    },
    "options": {
     "legend": {
@@ -580,7 +656,23 @@
       "mode": "palette-classic"
      }
     },
-    "overrides": []
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     }
+    ]
    },
    "options": {
     "legend": {
@@ -660,7 +752,7 @@
      "displayName": "${__field.labels.serie}",
      "color": {
       "mode": "fixed",
-      "fixedColor": "#0f766e"
+      "fixedColor": "#6D2CA0"
      }
     },
     "overrides": []
@@ -728,7 +820,7 @@
      "displayName": "${__field.labels.serie}",
      "color": {
       "mode": "fixed",
-      "fixedColor": "#0f766e"
+      "fixedColor": "#6D2CA0"
      }
     },
     "overrides": []
@@ -822,6 +914,51 @@
      }
     },
     "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "B"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F59C00"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "C"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#2563EB"
+        }
+       }
+      ]
+     },
      {
       "matcher": {
        "id": "byName",
@@ -922,7 +1059,38 @@
       "mode": "palette-classic"
      }
     },
-    "overrides": []
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "B"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F59C00"
+        }
+       }
+      ]
+     }
+    ]
    },
    "options": {
     "legend": {
@@ -1019,7 +1187,68 @@
       "mode": "palette-classic"
      }
     },
-    "overrides": []
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "B"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F59C00"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "C"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#2563EB"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "D"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#0B8574"
+        }
+       }
+      ]
+     }
+    ]
    },
    "options": {
     "legend": {
@@ -1096,6 +1325,51 @@
      }
     },
     "overrides": [
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "A"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#6D2CA0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "B"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F59C00"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byFrameRefID",
+       "options": "C"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#2563EB"
+        }
+       }
+      ]
+     },
      {
       "matcher": {
        "id": "byName",

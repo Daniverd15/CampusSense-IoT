@@ -82,6 +82,7 @@ Con `prefers-reduced-motion` no hay paquetes ni animaciones.
 
 **Veredicto:** listo para la sustentación.
 
-Limitaciones que siguen abiertas:
-- Grafana conserva su tema propio; no lleva la identidad UNAB.
-- El envío de comandos desde el formulario lo debe probar el grupo con la clave de control. En la revisión se probó por la API y el front reflejó el comando y el ACK en vivo.
+Cerrado en la segunda revisión (9-nov, 06:15 UTC):
+- Grafana usa la paleta UNAB: morado en las series principales, naranja en las anotaciones de comandos y colores de familia en el resto.
+- El formulario de comandos se probó de punta a punta con la clave en el navegador (por `localhost`, túnel SSH): el comando salió por MQTT y el dispositivo respondió en 2 ms.
+- Se corrigió una carrera: el ACK llegaba por SSE antes que la respuesta del POST y el aviso «El dispositivo aceptó» no aparecía. Ahora se guardan los ACK recientes.

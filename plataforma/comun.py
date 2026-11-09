@@ -15,6 +15,7 @@ Mensaje de subida (JSON):
   {"id", "tipo", "kind": "tele"|"estado"|"ack", "ts": epoch_ms, "seq", "v": {...}, "estado": {...}, "ack": {...}}
 """
 import asyncio
+import collections
 import json
 import os
 import random
@@ -99,7 +100,21 @@ class EnlaceAMQP(Enlace):
                                                 client_properties={"connection_name": "dev-" + dev_id})
         self.lock = threading.Lock()
         self.pub = None
+        self.pendientes = collections.deque(maxlen=2000)   # guardar y reenviar si el broker no esta
         threading.Thread(target=self._consumir, daemon=True).start()
+        threading.Thread(target=self._mantener, daemon=True).start()
+
+    def _mantener(self):
+        """pika BlockingConnection solo envia heartbeats si se atiende la conexion: sin esto RabbitMQ la cierra."""
+        while True:
+            time.sleep(10)
+            with self.lock:
+                try:
+                    if self.pub is not None and self.pub.is_open:
+                        self.pub.connection.process_data_events(time_limit=0)
+                except Exception as e:
+                    log(self.id, "AMQP keepalive: %s, se reconecta en el proximo envio" % type(e).__name__)
+                    self.pub = None
 
     def _canal(self):
         if self.pub is None or self.pub.is_closed:
@@ -110,16 +125,18 @@ class EnlaceAMQP(Enlace):
         return self.pub
 
     def enviar(self, msg):
-        if not msg:
-            return
         with self.lock:
+            if msg:
+                self.pendientes.append(msg)
             for intento in range(3):
                 try:
-                    self._canal().basic_publish("campus.tele", "tele." + self.id, json.dumps(msg).encode(),
-                                                self.pika.BasicProperties(delivery_mode=2, content_type="application/json"))
+                    while self.pendientes:
+                        self._canal().basic_publish("campus.tele", "tele." + self.id, json.dumps(self.pendientes[0]).encode(),
+                                                    self.pika.BasicProperties(delivery_mode=2, content_type="application/json"))
+                        self.pendientes.popleft()     # solo sale de la cola cuando el broker lo confirmo
                     return
                 except Exception as e:
-                    log(self.id, "AMQP publicar fallo (%s), reintento" % type(e).__name__)
+                    log(self.id, "AMQP publicar fallo (%s), reintento; %d en cola" % (type(e).__name__, len(self.pendientes)))
                     self.pub = None
                     time.sleep(2 + intento * 3)
 
@@ -273,23 +290,26 @@ class EnlaceHTTP(Enlace):
         super().__init__(dev_id)
         self.url = "%s/api/ingest/%s" % (os.environ.get("API_URL", "http://api:8000"), dev_id)
         self.token = os.environ["INGEST_TOKEN"]
+        self.pendientes = collections.deque(maxlen=2000)   # guardar y reenviar si la API no responde
+        self.lock = threading.RLock()
 
     def enviar(self, msg):
-        if not msg:
-            return
-        req = urllib.request.Request(self.url, data=json.dumps(msg).encode(), method="POST",
-                                     headers={"Content-Type": "application/json", "X-Token": self.token})
-        for _ in range(3):
-            try:
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    resp = json.loads(r.read() or b"{}")
+        with self.lock:
+            if msg:
+                self.pendientes.append(msg)
+            while self.pendientes:
+                req = urllib.request.Request(self.url, data=json.dumps(self.pendientes[0]).encode(), method="POST",
+                                             headers={"Content-Type": "application/json", "X-Token": self.token})
+                try:
+                    with urllib.request.urlopen(req, timeout=10) as r:
+                        resp = json.loads(r.read() or b"{}")
+                except (urllib.error.URLError, OSError, ValueError) as e:
+                    log(self.id, "HTTP POST fallo (%s); %d en cola, se reenvian en el proximo envio" % (e, len(self.pendientes)))
+                    return
+                self.pendientes.popleft()
                 for cmd in resp.get("comandos", []):
                     if self.on_cmd:
                         self.enviar(self.on_cmd(cmd))
-                return
-            except (urllib.error.URLError, OSError, ValueError) as e:
-                log(self.id, "HTTP POST fallo: %s" % e)
-                time.sleep(3)
 
 
 def crear_enlace(dev_id, **kw):

@@ -20,7 +20,8 @@ B = "campus"
 AQUI = os.path.dirname(os.path.abspath(__file__))
 LEYENDA = {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["min", "mean", "max", "lastNotNull"]},
            "tooltip": {"mode": "multi", "sort": "none"}}
-COL = ["#1f6feb", "#e8590c", "#2f9e44", "#9c36b5", "#c92a2a", "#0c8599", "#f08c00", "#5c7cfa"]
+# paleta UNAB: morado institucional primero, naranja (retroceso) y luego los colores de familia del front
+COL = ["#6D2CA0", "#F59C00", "#2563EB", "#0B8574", "#BE185D", "#3B1561", "#C97C00", "#7B35B3"]
 
 
 def serie(dev, campo, nombre, fn="mean", medida="telemetria"):
@@ -76,11 +77,13 @@ class Tablero:
             cfg["thresholdsStyle"] = {"mode": "dashed"}
         if extra_def:
             d.update(extra_def)
+        colores = [{"matcher": {"id": "byFrameRefID", "options": chr(65 + i)},
+                    "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": COL[i % len(COL)]}}]} for i in range(len(consultas))]
         return self.add({"type": "timeseries", "title": titulo, "description": desc, "datasource": DS,
                          "targets": [{"refId": chr(65 + i), "datasource": DS, "query": q} for i, q in enumerate(consultas)],
-                         "fieldConfig": {"defaults": d, "overrides": []}, "options": LEYENDA}, w, h)
+                         "fieldConfig": {"defaults": d, "overrides": colores}, "options": LEYENDA}, w, h)
 
-    def stat(self, titulo, consultas, unidad="", w=4, h=4, desc="", decimales=1, color="#0f766e", pasos=None):
+    def stat(self, titulo, consultas, unidad="", w=4, h=4, desc="", decimales=1, color="#6D2CA0", pasos=None):
         d = {"unit": unidad, "decimals": decimales, "displayName": "${__field.labels.serie}",
              "color": {"mode": "fixed", "fixedColor": color} if not pasos else {"mode": "thresholds"}}
         if pasos:
@@ -115,11 +118,11 @@ class Tablero:
                 "panels": self.paneles}
 
 
-ANOT_CMD = {"name": "Comandos (retroceso)", "datasource": DS, "enable": True, "iconColor": "#e8590c",
+ANOT_CMD = {"name": "Comandos (retroceso)", "datasource": DS, "enable": True, "iconColor": "#F59C00",
             "target": {"refId": "Anno", "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
                        '  |> filter(fn: (r) => r._measurement == "comandos" and r._field == "params")\n'
                        '  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + ": " + r.accion + " " + r._value + " (" + r.origen + ")"}))'}}
-ANOT_ALERTA = {"name": "Alertas", "datasource": DS, "enable": True, "iconColor": "#c92a2a",
+ANOT_ALERTA = {"name": "Alertas", "datasource": DS, "enable": True, "iconColor": "#C2253A",
                "target": {"refId": "Alr", "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
                           '  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "mensaje")\n'
                           '  |> map(fn: (r) => ({_time: r._time, text: r.regla + " [" + r.dispositivo + "]: " + r._value}))'}}
@@ -134,13 +137,13 @@ t = Tablero("campus-resumen", "CampusSense · 1. Resumen de la plataforma",
 t.anotaciones = [ANOT_CMD, ANOT_ALERTA]
 t.stat("Dispositivos con datos (últimos 10 min)", ['from(bucket: "campus")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n  |> group(columns: ["dispositivo"])\n  |> last()\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "en línea")\n  |> group(columns: ["serie"])'],
        "none", 6, 4, "Dispositivos distintos que enviaron telemetría en los últimos 10 minutos (12 posibles; el ESP32 de Wokwi solo en sesiones).", 0,
-       pasos=[(None, "#c92a2a"), (9, "#f08c00"), (11, "#2f9e44")])
+       pasos=[(None, "#C2253A"), (9, "#F59C00"), (11, "#6D2CA0")])
 t.stat("Mensajes en el rango", ['from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "telemetría")\n  |> group(columns: ["serie"])'],
        "short", 6, 4, "Mensajes de telemetría guardados en InfluxDB en el rango elegido.", 0)
 t.stat("Alertas activas", ['from(bucket: "campus")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "activa")\n  |> group(columns: ["regla", "dispositivo"])\n  |> last()\n  |> group()\n  |> sum()\n  |> set(key: "serie", value: "activas")\n  |> group(columns: ["serie"])'],
-       "none", 6, 4, "Última transición de cada regla: 1 = disparada, 0 = resuelta.", 0, pasos=[(None, "#2f9e44"), (1, "#c92a2a")])
+       "none", 6, 4, "Última transición de cada regla: 1 = disparada, 0 = resuelta.", 0, pasos=[(None, "#6D2CA0"), (1, "#C2253A")])
 t.stat("Comandos en el rango", ['from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "comandos" and r._field == "cmd_id")\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "comandos")\n  |> group(columns: ["serie"])'],
-       "none", 6, 4, "Comandos de retroceso enviados (manuales y automáticos por regla).", 0, color="#e8590c")
+       "none", 6, 4, "Comandos de retroceso enviados (manuales y automáticos por regla).", 0, color="#F59C00")
 t.tabla("Estado de los dispositivos (último mensaje)",
         'from(bucket: "campus")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "lat_ms")\n'
         '  |> group(columns: ["dispositivo", "tipo", "protocolo"])\n  |> last()\n  |> map(fn: (r) => ({dispositivo: r.dispositivo, tipo: r.tipo, protocolo: r.protocolo, ultimo: r._time, latencia_ms: r._value,\n'
@@ -177,11 +180,11 @@ t.resumen("aula-101", "ocupacion", "Ocupación Aula 101", "none", 8, 4, 0)
 t.ts("CO₂ y ocupación", [serie("aula-101", "co2", "CO₂ (ppm)"), serie("aula-101", "ocupacion", "ocupación (personas)")], "", 12, 8,
      "El CO₂ sube con la gente y baja cuando el gemelo HVAC pasa a ventilación (anotaciones naranjas).", umbrales=[(1000, "red")],
      extra_def={}, minimo=0)
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "ocupación (personas)"},
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "ocupación (personas)"},
                                               "properties": [{"id": "custom.axisPlacement", "value": "right"}, {"id": "custom.drawStyle", "value": "bars"},
                                                              {"id": "custom.fillOpacity", "value": 30}]}]
 t.ts("Temperatura y humedad", [serie("aula-101", "temperatura", "temperatura (°C)"), serie("aula-101", "humedad", "humedad (%)")], "", 12, 8)
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "humedad (%)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "humedad (%)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
 t.ts("Ruido", [serie("aula-101", "ruido", "ruido")], "dB", 12, 6)
 t.ts("Iluminación", [serie("aula-101", "luz", "luz")], "lux", 12, 6)
 t.fila("Laboratorio de Química (lab-quimica)")
@@ -189,7 +192,7 @@ t.resumen("lab-quimica", "pm25", "PM2.5 Lab. Química", "conμgm3", 12, 4, 1)
 t.resumen("lab-quimica", "voc", "VOC Lab. Química", "ppb", 12, 4, 0)
 t.ts("PM2.5 y VOC (con extractor)", [serie("lab-quimica", "pm25", "PM2.5 (µg/m³)"), serie("lab-quimica", "voc", "VOC (ppb)"),
                                      serie("lab-quimica", "extractor", "extractor (0/1)", "max")], "", 16, 8, umbrales=[(35, "red")])
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "VOC (ppb)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]},
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "VOC (ppb)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]},
                                              {"matcher": {"id": "byName", "options": "extractor (0/1)"}, "properties": [{"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 20}, {"id": "custom.axisPlacement", "value": "hidden"}]}]
 t.ts("Temperatura y humedad del laboratorio", [serie("lab-quimica", "temperatura", "temperatura (°C)"), serie("lab-quimica", "humedad", "humedad (%)")], "", 8, 8)
 t.fila("ESP32 de demostración (Wokwi) y oficina del dataset UCI")
@@ -199,7 +202,7 @@ t.ts("ESP32 Wokwi: DHT22 y LDR", [serie("esp32-wokwi", "temperatura", "temperatu
 t.ts("Oficina UCI: CO₂, luz y ocupación", [serie("ds-ocupacion-uci", "co2", "CO₂ (ppm)"), serie("ds-ocupacion-uci", "luz", "luz (lux)"),
                                            serie("ds-ocupacion-uci", "ocupacion", "ocupación (0/1)", "max")], "", 12, 8,
      "Dataset UCI Occupancy Detection repetido a 1 fila/min, alineado al día de la semana y la hora actuales.")
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "ocupación (0/1)"}, "properties": [{"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 25}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "ocupación (0/1)"}, "properties": [{"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 25}]}]
 tableros.append(("02-ambiente.json", t))
 
 # =============================================================================== 03 energia y agua
@@ -215,19 +218,19 @@ t.ts("Potencia de red vs generación solar vs HVAC", [serie("medidor-bloque-a", 
                                                      serie("twin-hvac-aula101", "potencia", "HVAC Aula 101 (kW)")], "kwatt", 16, 8, umbrales=[(30, "red")], minimo=0)
 t.ts("Energía solar del día", [serie("twin-panel-solar", "energia_dia", "energía del día", "last")], "kwatth", 8, 8, minimo=0)
 t.ts("Irradiancia y temperatura de panel", [serie("twin-panel-solar", "irradiancia", "irradiancia (W/m²)"), serie("twin-panel-solar", "temp_panel", "temp. panel (°C)")], "", 12, 7)
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "temp. panel (°C)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "temp. panel (°C)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
 t.ts("Voltaje y factor de potencia", [serie("medidor-bloque-a", "voltaje", "voltaje (V)"), serie("medidor-bloque-a", "fp", "factor de potencia")], "", 12, 7)
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "factor de potencia"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "factor de potencia"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
 t.fila("Gemelo digital HVAC — modelo vs aula real")
 t.ts("Temperatura medida (aula-101) vs predicha por el gemelo", [serie("aula-101", "temperatura", "medida (aula-101)"), serie("twin-hvac-aula101", "temp_modelo", "modelo del gemelo"),
                                                                serie("twin-hvac-aula101", "setpoint", "setpoint", "last")], "celsius", 12, 8,
      "Un gemelo digital sirve si predice bien: la diferencia (error del modelo) debería quedarse cerca de 0.")
 t.ts("Error del modelo y modo del HVAC", [serie("twin-hvac-aula101", "error_modelo", "error medido − modelo (°C)"), serie("twin-hvac-aula101", "modo", "modo (0 apag. 1 auto 2 vent. 3 eco)", "last")], "", 12, 8, step=False)
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "modo (0 apag. 1 auto 2 vent. 3 eco)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}, {"id": "custom.lineInterpolation", "value": "stepAfter"}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "modo (0 apag. 1 auto 2 vent. 3 eco)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}, {"id": "custom.lineInterpolation", "value": "stepAfter"}]}]
 t.fila("Gemelo digital tanque de agua")
 t.resumen("twin-tanque-agua", "nivel", "Nivel del tanque", "percent", 8, 4, 1)
 t.ts("Nivel y bomba", [serie("twin-tanque-agua", "nivel", "nivel (%)"), serie("twin-tanque-agua", "bomba", "bomba (0/1)", "max")], "", 16, 8, umbrales=[(20, "red")], minimo=0)
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "bomba (0/1)"}, "properties": [{"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 20}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "bomba (0/1)"}, "properties": [{"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 20}]}]
 t.ts("Caudales de entrada y salida", [serie("twin-tanque-agua", "caudal_entrada", "entrada (bomba)"), serie("twin-tanque-agua", "caudal_salida", "salida (consumo)")], "", 24, 7)
 tableros.append(("03-energia-agua.json", t))
 
@@ -266,7 +269,7 @@ t.add({"type": "geomap", "title": "Recorrido del bus (últimas posiciones)", "da
                                "config": {"size": {"fixed": 5}, "color": {"field": "velocidad", "fixed": "dark-green"}, "showLegend": True}}]}}, 12, 10)
 t.ts("Velocidad y distancia al campus", [serie("api-bus-ruta1", "velocidad", "velocidad (km/h)", "max"), serie("api-bus-ruta1", "distancia_campus", "distancia al campus (km)")], "", 12, 10,
      umbrales=[(60, "red")])
-t.paneles[-1]["fieldConfig"]["overrides"] = [{"matcher": {"id": "byName", "options": "distancia al campus (km)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "distancia al campus (km)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]}]
 tableros.append(("04-exterior.json", t))
 
 # =============================================================================== 05 retroceso y reglas
@@ -286,7 +289,7 @@ def estado_q(campo, nombre_por_disp=True):
 t.add({"type": "state-timeline", "title": "Encendido / apagado por comando (estado reportado)", "datasource": DS,
        "targets": [{"refId": "A", "datasource": DS, "query": estado_q("encendido")}],
        "fieldConfig": {"defaults": {"displayName": "${__field.labels.serie}", "color": {"mode": "thresholds"},
-                                    "thresholds": {"mode": "absolute", "steps": [{"color": "#c92a2a", "value": None}, {"color": "#2f9e44", "value": 1}]},
+                                    "thresholds": {"mode": "absolute", "steps": [{"color": "#C2253A", "value": None}, {"color": "#0B8574", "value": 1}]},
                                     "mappings": [{"type": "value", "options": {"0": {"text": "apagado"}, "1": {"text": "encendido"}}}]}, "overrides": []},
        "options": {"showValue": "never", "rowHeight": 0.8, "mergeValues": True, "legend": {"showLegend": False}}}, 24, 9)
 t.ts("Intervalo de muestreo reportado (s)", [estado_q("intervalo_s")], "s", 12, 8, "Cambia cuando se envía el comando «intervalo».", step=True)
@@ -295,20 +298,20 @@ t.add({"type": "barchart", "title": "Tiempo de ida y vuelta del ACK por protocol
        "targets": [{"refId": "A", "datasource": DS, "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
                     '  |> filter(fn: (r) => r._measurement == "ack" and r._field == "rtt_ms")\n  |> group(columns: ["protocolo"])\n  |> mean()\n'
                     '  |> group()\n  |> keep(columns: ["protocolo", "_value"])\n  |> rename(columns: {_value: "RTT ms"})'}],
-       "fieldConfig": {"defaults": {"unit": "ms", "color": {"mode": "fixed", "fixedColor": "#e8590c"}}, "overrides": []},
+       "fieldConfig": {"defaults": {"unit": "ms", "color": {"mode": "fixed", "fixedColor": "#F59C00"}}, "overrides": []},
        "options": {"orientation": "horizontal", "showValue": "always", "xField": "protocolo", "legend": {"showLegend": False}}}, 12, 8)
 t.add({"type": "barchart", "title": "Latencia de subida dispositivo → InfluxDB por protocolo (promedio del rango)", "datasource": DS,
        "targets": [{"refId": "A", "datasource": DS, "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
                     '  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "lat_ms")\n  |> group(columns: ["protocolo"])\n  |> mean()\n'
                     '  |> group()\n  |> keep(columns: ["protocolo", "_value"])\n  |> rename(columns: {_value: "latencia ms"})'}],
-       "fieldConfig": {"defaults": {"unit": "ms", "color": {"mode": "fixed", "fixedColor": "#1f6feb"}}, "overrides": []},
+       "fieldConfig": {"defaults": {"unit": "ms", "color": {"mode": "fixed", "fixedColor": "#6D2CA0"}}, "overrides": []},
        "options": {"orientation": "horizontal", "showValue": "always", "xField": "protocolo", "legend": {"showLegend": False}}}, 12, 8)
 t.add({"type": "state-timeline", "title": "Reglas y alertas (1 = disparada)", "datasource": DS,
        "targets": [{"refId": "A", "datasource": DS, "query": 'from(bucket: "campus")\n  |> range(start: -30d, stop: v.timeRangeStop)\n'
                     '  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "activa")\n  |> map(fn: (r) => ({r with serie: r.regla + " · " + r.dispositivo}))\n'
                     '  |> keep(columns: ["_time", "_value", "serie"])\n  |> group(columns: ["serie"])'}],
        "fieldConfig": {"defaults": {"displayName": "${__field.labels.serie}", "color": {"mode": "thresholds"},
-                                    "thresholds": {"mode": "absolute", "steps": [{"color": "#2f9e44", "value": None}, {"color": "#c92a2a", "value": 1}]},
+                                    "thresholds": {"mode": "absolute", "steps": [{"color": "#0B8574", "value": None}, {"color": "#C2253A", "value": 1}]},
                                     "mappings": [{"type": "value", "options": {"0": {"text": "normal"}, "1": {"text": "disparada"}}}]}, "overrides": []},
        "options": {"showValue": "never", "rowHeight": 0.8, "mergeValues": True, "legend": {"showLegend": False}}}, 24, 9)
 t.tabla("ACK de comandos (respuesta de los dispositivos)", 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "ack")\n'
