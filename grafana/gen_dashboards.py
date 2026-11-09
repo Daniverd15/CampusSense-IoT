@@ -27,14 +27,14 @@ def serie(dev, campo, nombre, fn="mean", medida="telemetria"):
     return ('from(bucket: "%s")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
             '  |> filter(fn: (r) => r._measurement == "%s" and r.dispositivo == "%s" and r._field == "%s")\n'
             '  |> aggregateWindow(every: v.windowPeriod, fn: %s, createEmpty: false)\n'
-            '  |> set(key: "serie", value: "%s")\n  |> keep(columns: ["_time", "_value", "serie"])' % (B, medida, dev, campo, fn, nombre))
+            '  |> set(key: "serie", value: "%s")\n  |> keep(columns: ["_time", "_value", "serie"])\n  |> group(columns: ["serie"])' % (B, medida, dev, campo, fn, nombre))
 
 
 def total(dev, campo, nombre, fn):
     """Una sola cifra del rango completo: mean / max / min."""
     return ('from(bucket: "%s")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
             '  |> filter(fn: (r) => r._measurement == "telemetria" and r.dispositivo == "%s" and r._field == "%s")\n'
-            '  |> group()\n  |> %s()\n  |> set(key: "serie", value: "%s")\n  |> keep(columns: ["_value", "serie"])' % (B, dev, campo, fn, nombre))
+            '  |> group()\n  |> %s()\n  |> set(key: "serie", value: "%s")\n  |> keep(columns: ["_value", "serie"])\n  |> group(columns: ["serie"])' % (B, dev, campo, fn, nombre))
 
 
 class Tablero:
@@ -132,14 +132,14 @@ t = Tablero("campus-resumen", "CampusSense · 1. Resumen de la plataforma",
             "→ Mosquitto / RabbitMQ → ingestor y API → **InfluxDB** → Grafana. El retroceso (comandos) usa el mismo protocolo de cada dispositivo. Hora de Bogotá.",
             ["campussense"])
 t.anotaciones = [ANOT_CMD, ANOT_ALERTA]
-t.stat("Dispositivos con datos (últimos 10 min)", ['from(bucket: "campus")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n  |> group(columns: ["dispositivo"])\n  |> last()\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "en línea")'],
+t.stat("Dispositivos con datos (últimos 10 min)", ['from(bucket: "campus")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n  |> group(columns: ["dispositivo"])\n  |> last()\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "en línea")\n  |> group(columns: ["serie"])'],
        "none", 6, 4, "Dispositivos distintos que enviaron telemetría en los últimos 10 minutos (12 posibles; el ESP32 de Wokwi solo en sesiones).", 0,
        pasos=[(None, "#c92a2a"), (9, "#f08c00"), (11, "#2f9e44")])
-t.stat("Mensajes en el rango", ['from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "telemetría")'],
+t.stat("Mensajes en el rango", ['from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "telemetría")\n  |> group(columns: ["serie"])'],
        "short", 6, 4, "Mensajes de telemetría guardados en InfluxDB en el rango elegido.", 0)
-t.stat("Alertas activas", ['from(bucket: "campus")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "activa")\n  |> group(columns: ["regla", "dispositivo"])\n  |> last()\n  |> group()\n  |> sum()\n  |> set(key: "serie", value: "activas")'],
+t.stat("Alertas activas", ['from(bucket: "campus")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "activa")\n  |> group(columns: ["regla", "dispositivo"])\n  |> last()\n  |> group()\n  |> sum()\n  |> set(key: "serie", value: "activas")\n  |> group(columns: ["serie"])'],
        "none", 6, 4, "Última transición de cada regla: 1 = disparada, 0 = resuelta.", 0, pasos=[(None, "#2f9e44"), (1, "#c92a2a")])
-t.stat("Comandos en el rango", ['from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "comandos" and r._field == "cmd_id")\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "comandos")'],
+t.stat("Comandos en el rango", ['from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "comandos" and r._field == "cmd_id")\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "comandos")\n  |> group(columns: ["serie"])'],
        "none", 6, 4, "Comandos de retroceso enviados (manuales y automáticos por regla).", 0, color="#e8590c")
 t.tabla("Estado de los dispositivos (último mensaje)",
         'from(bucket: "campus")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "lat_ms")\n'
@@ -153,7 +153,7 @@ t.tabla("Estado de los dispositivos (último mensaje)",
 t.ts("Mensajes por minuto según protocolo", ['from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n'
                                              '  |> group(columns: ["protocolo"])\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: true)\n'
                                              '  |> map(fn: (r) => ({r with _value: float(v: r._value) * 60000000000.0 / float(v: int(v: v.windowPeriod))}))\n'
-                                             '  |> map(fn: (r) => ({r with serie: r.protocolo}))\n  |> keep(columns: ["_time", "_value", "serie"])'],
+                                             '  |> map(fn: (r) => ({r with serie: r.protocolo}))\n  |> keep(columns: ["_time", "_value", "serie"])\n  |> group(columns: ["serie"])'],
      "short", 12, 10, "Caudal de mensajes por protocolo. Un hueco cae a 0.")
 t.tabla("Últimas alertas", 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == "alertas")\n'
         '  |> pivot(rowKey: ["_time", "regla", "dispositivo", "severidad", "origen"], columnKey: ["_field"], valueColumn: "_value")\n  |> group()\n'
@@ -280,7 +280,7 @@ def estado_q(campo, nombre_por_disp=True):
     return ('from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
             '  |> filter(fn: (r) => r._measurement == "estado" and r._field == "%s")\n'
             '  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n'
-            '  |> map(fn: (r) => ({r with serie: r.dispositivo}))\n  |> keep(columns: ["_time", "_value", "serie"])' % campo)
+            '  |> map(fn: (r) => ({r with serie: r.dispositivo}))\n  |> keep(columns: ["_time", "_value", "serie"])\n  |> group(columns: ["serie"])' % campo)
 
 
 t.add({"type": "state-timeline", "title": "Encendido / apagado por comando (estado reportado)", "datasource": DS,
@@ -306,7 +306,7 @@ t.add({"type": "barchart", "title": "Latencia de subida dispositivo → InfluxDB
 t.add({"type": "state-timeline", "title": "Reglas y alertas (1 = disparada)", "datasource": DS,
        "targets": [{"refId": "A", "datasource": DS, "query": 'from(bucket: "campus")\n  |> range(start: -30d, stop: v.timeRangeStop)\n'
                     '  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "activa")\n  |> map(fn: (r) => ({r with serie: r.regla + " · " + r.dispositivo}))\n'
-                    '  |> keep(columns: ["_time", "_value", "serie"])'}],
+                    '  |> keep(columns: ["_time", "_value", "serie"])\n  |> group(columns: ["serie"])'}],
        "fieldConfig": {"defaults": {"displayName": "${__field.labels.serie}", "color": {"mode": "thresholds"},
                                     "thresholds": {"mode": "absolute", "steps": [{"color": "#2f9e44", "value": None}, {"color": "#c92a2a", "value": 1}]},
                                     "mappings": [{"type": "value", "options": {"0": {"text": "normal"}, "1": {"text": "disparada"}}}]}, "overrides": []},

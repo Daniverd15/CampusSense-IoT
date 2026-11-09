@@ -97,7 +97,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group(columns: [\"dispositivo\"])\n  |> last()\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"en línea\")"
+     "query": "from(bucket: \"campus\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group(columns: [\"dispositivo\"])\n  |> last()\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"en línea\")\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -165,7 +165,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"telemetría\")"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"telemetría\")\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -217,7 +217,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"activa\")\n  |> group(columns: [\"regla\", \"dispositivo\"])\n  |> last()\n  |> group()\n  |> sum()\n  |> set(key: \"serie\", value: \"activas\")"
+     "query": "from(bucket: \"campus\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"activa\")\n  |> group(columns: [\"regla\", \"dispositivo\"])\n  |> last()\n  |> group()\n  |> sum()\n  |> set(key: \"serie\", value: \"activas\")\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -281,7 +281,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"cmd_id\")\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"comandos\")"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"cmd_id\")\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"comandos\")\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -423,7 +423,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group(columns: [\"protocolo\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: true)\n  |> map(fn: (r) => ({r with _value: float(v: r._value) * 60000000000.0 / float(v: int(v: v.windowPeriod))}))\n  |> map(fn: (r) => ({r with serie: r.protocolo}))\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group(columns: [\"protocolo\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: true)\n  |> map(fn: (r) => ({r with _value: float(v: r._value) * 60000000000.0 / float(v: int(v: v.windowPeriod))}))\n  |> map(fn: (r) => ({r with serie: r.protocolo}))\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {

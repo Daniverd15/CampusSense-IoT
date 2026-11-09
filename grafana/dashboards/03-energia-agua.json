@@ -110,7 +110,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -118,7 +118,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "C",
@@ -126,7 +126,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -178,7 +178,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -186,7 +186,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "C",
@@ -194,7 +194,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -246,7 +246,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -254,7 +254,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "C",
@@ -262,7 +262,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -314,7 +314,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"red Bloque A (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"red Bloque A (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -322,7 +322,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"solar (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"solar (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "C",
@@ -330,7 +330,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"HVAC Aula 101 (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"HVAC Aula 101 (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -407,7 +407,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"energia_dia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"energía del día\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"energia_dia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"energía del día\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -468,7 +468,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"irradiancia (W/m²)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"irradiancia (W/m²)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -476,7 +476,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"temp_panel\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"temp. panel (°C)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"temp_panel\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"temp. panel (°C)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -549,7 +549,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"voltaje\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"voltaje (V)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"voltaje\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"voltaje (V)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -557,7 +557,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"fp\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"factor de potencia\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"fp\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"factor de potencia\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -643,7 +643,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"aula-101\" and r._field == \"temperatura\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"medida (aula-101)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"aula-101\" and r._field == \"temperatura\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"medida (aula-101)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -651,7 +651,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"temp_modelo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"modelo del gemelo\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"temp_modelo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"modelo del gemelo\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "C",
@@ -659,7 +659,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"setpoint\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"setpoint\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"setpoint\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"setpoint\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -719,7 +719,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"error_modelo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"error medido − modelo (°C)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"error_modelo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"error medido − modelo (°C)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -727,7 +727,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"modo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"modo (0 apag. 1 auto 2 vent. 3 eco)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"modo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"modo (0 apag. 1 auto 2 vent. 3 eco)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -817,7 +817,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -825,7 +825,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "C",
@@ -833,7 +833,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -885,7 +885,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"nivel (%)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"nivel (%)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -893,7 +893,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"bomba\")\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)\n  |> set(key: \"serie\", value: \"bomba (0/1)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"bomba\")\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)\n  |> set(key: \"serie\", value: \"bomba (0/1)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
@@ -991,7 +991,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"caudal_entrada\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"entrada (bomba)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"caudal_entrada\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"entrada (bomba)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     },
     {
      "refId": "B",
@@ -999,7 +999,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"caudal_salida\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"salida (consumo)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"caudal_salida\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"salida (consumo)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])\n  |> group(columns: [\"serie\"])"
     }
    ],
    "fieldConfig": {
