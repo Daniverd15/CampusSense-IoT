@@ -1,0 +1,467 @@
+{
+ "uid": "campus-retroceso",
+ "title": "CampusSense · 5. Retroceso, reglas y protocolos",
+ "tags": [
+  "campussense"
+ ],
+ "timezone": "America/Bogota",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "1m",
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "timepicker": {
+  "refresh_intervals": [
+   "30s",
+   "1m",
+   "5m",
+   "15m"
+  ]
+ },
+ "annotations": {
+  "list": [
+   {
+    "name": "Comandos (retroceso)",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#e8590c",
+    "target": {
+     "refId": "Anno",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
+    }
+   },
+   {
+    "name": "Alertas",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#c92a2a",
+    "target": {
+     "refId": "Alr",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"mensaje\")\n  |> map(fn: (r) => ({_time: r._time, text: r.regla + \" [\" + r.dispositivo + \"]: \" + r._value}))"
+    }
+   }
+  ]
+ },
+ "templating": {
+  "list": []
+ },
+ "links": [
+  {
+   "title": "CampusSense",
+   "type": "dashboards",
+   "tags": [
+    "campussense"
+   ],
+   "asDropdown": true
+  }
+ ],
+ "panels": [
+  {
+   "type": "text",
+   "title": "",
+   "transparent": true,
+   "options": {
+    "mode": "markdown",
+    "content": "**Retroceso:** cada comando (encender, apagar, intervalo, calibrar, setpoint, modo…) se ve como anotación naranja y cambia el estado que reporta el dispositivo. **Reglas:** el motor de la API actúa solo (R1–R7). **Protocolos:** latencia de subida y tiempo de ida y vuelta del ACK de cada comando."
+   },
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 3
+   }
+  },
+  {
+   "type": "state-timeline",
+   "title": "Encendido / apagado por comando (estado reportado)",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"estado\" and r._field == \"encendido\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> map(fn: (r) => ({r with serie: r.dispositivo}))\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#c92a2a",
+        "value": null
+       },
+       {
+        "color": "#2f9e44",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "apagado"
+        },
+        "1": {
+         "text": "encendido"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "showValue": "never",
+    "rowHeight": 0.8,
+    "mergeValues": true,
+    "legend": {
+     "showLegend": false
+    }
+   },
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 3,
+    "w": 24,
+    "h": 9
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Intervalo de muestreo reportado (s)",
+   "description": "Cambia cuando se envía el comando «intervalo».",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"estado\" and r._field == \"intervalo_s\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> map(fn: (r) => ({r with serie: r.dispositivo}))\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "stepAfter"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 3,
+   "gridPos": {
+    "x": 0,
+    "y": 12,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Modo del HVAC (gemelo) — acciones de R1/R2",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"modo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"modo (0 apag. 1 auto 2 vent. 3 eco)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "stepAfter"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 4,
+   "gridPos": {
+    "x": 12,
+    "y": 12,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "barchart",
+   "title": "Tiempo de ida y vuelta del ACK por protocolo (promedio del rango)",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"ack\" and r._field == \"rtt_ms\")\n  |> group(columns: [\"protocolo\"])\n  |> mean()\n  |> group()\n  |> keep(columns: [\"protocolo\", \"_value\"])\n  |> rename(columns: {_value: \"RTT ms\"})"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ms",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#e8590c"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "orientation": "horizontal",
+    "showValue": "always",
+    "xField": "protocolo",
+    "legend": {
+     "showLegend": false
+    }
+   },
+   "id": 5,
+   "gridPos": {
+    "x": 0,
+    "y": 20,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "barchart",
+   "title": "Latencia de subida dispositivo → InfluxDB por protocolo (promedio del rango)",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"lat_ms\")\n  |> group(columns: [\"protocolo\"])\n  |> mean()\n  |> group()\n  |> keep(columns: [\"protocolo\", \"_value\"])\n  |> rename(columns: {_value: \"latencia ms\"})"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ms",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#1f6feb"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "orientation": "horizontal",
+    "showValue": "always",
+    "xField": "protocolo",
+    "legend": {
+     "showLegend": false
+    }
+   },
+   "id": 6,
+   "gridPos": {
+    "x": 12,
+    "y": 20,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "state-timeline",
+   "title": "Reglas y alertas (1 = disparada)",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: -30d, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"activa\")\n  |> map(fn: (r) => ({r with serie: r.regla + \" · \" + r.dispositivo}))\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#2f9e44",
+        "value": null
+       },
+       {
+        "color": "#c92a2a",
+        "value": 1
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "normal"
+        },
+        "1": {
+         "text": "disparada"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "showValue": "never",
+    "rowHeight": 0.8,
+    "mergeValues": true,
+    "legend": {
+     "showLegend": false
+    }
+   },
+   "id": 7,
+   "gridPos": {
+    "x": 0,
+    "y": 28,
+    "w": 24,
+    "h": 9
+   }
+  },
+  {
+   "type": "table",
+   "title": "ACK de comandos (respuesta de los dispositivos)",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"ack\")\n  |> pivot(rowKey: [\"_time\", \"dispositivo\", \"accion\", \"protocolo\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group()\n  |> keep(columns: [\"_time\", \"dispositivo\", \"protocolo\", \"accion\", \"ok\", \"detalle\", \"rtt_ms\"])\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 60)"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    }
+   },
+   "transformations": [],
+   "id": 8,
+   "gridPos": {
+    "x": 0,
+    "y": 37,
+    "w": 24,
+    "h": 9
+   }
+  }
+ ]
+}

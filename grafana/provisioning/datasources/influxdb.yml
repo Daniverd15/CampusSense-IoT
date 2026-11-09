@@ -1,0 +1,17 @@
+# Grafana solo LEE la base de datos de series de tiempo.
+apiVersion: 1
+datasources:
+  - name: InfluxDB-Campus
+    uid: influx-campus
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    editable: false
+    jsonData:
+      version: Flux
+      organization: unab
+      defaultBucket: campus
+      timeInterval: 15s
+    secureJsonData:
+      token: $INFLUX_TOKEN

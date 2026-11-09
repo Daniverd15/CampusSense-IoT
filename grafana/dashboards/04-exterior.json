@@ -1,0 +1,1149 @@
+{
+ "uid": "campus-exterior",
+ "title": "CampusSense · 4. Exterior y movilidad",
+ "tags": [
+  "campussense"
+ ],
+ "timezone": "America/Bogota",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "1m",
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "timepicker": {
+  "refresh_intervals": [
+   "30s",
+   "1m",
+   "5m",
+   "15m"
+  ]
+ },
+ "annotations": {
+  "list": [
+   {
+    "name": "Comandos (retroceso)",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#e8590c",
+    "target": {
+     "refId": "Anno",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
+    }
+   },
+   {
+    "name": "Alertas",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#c92a2a",
+    "target": {
+     "refId": "Alr",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"mensaje\")\n  |> map(fn: (r) => ({_time: r._time, text: r.regla + \" [\" + r.dispositivo + \"]: \" + r._value}))"
+    }
+   }
+  ]
+ },
+ "templating": {
+  "list": []
+ },
+ "links": [
+  {
+   "title": "CampusSense",
+   "type": "dashboards",
+   "tags": [
+    "campussense"
+   ],
+   "asDropdown": true
+  }
+ ],
+ "panels": [
+  {
+   "type": "text",
+   "title": "",
+   "transparent": true,
+   "options": {
+    "mode": "markdown",
+    "content": "**Clima y calidad del aire** de Azure Maps (API, HTTPS → MQTT) · **Estación urbana UCI** (dataset, AMQP) · **Bus UNAB Ruta 1** (API GPS, HTTP → MQTT)."
+   },
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 3
+   }
+  },
+  {
+   "type": "row",
+   "title": "Clima en el campus (api-clima-unab)",
+   "collapsed": false,
+   "panels": [],
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 3,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Temperatura exterior — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"temperatura\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"temperatura\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"temperatura\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "decimals": 1,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 3,
+   "gridPos": {
+    "x": 0,
+    "y": 4,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Humedad exterior — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"humedad\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"humedad\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"humedad\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 4,
+   "gridPos": {
+    "x": 8,
+    "y": 4,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Nubosidad — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"nubosidad\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"nubosidad\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"nubosidad\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 5,
+   "gridPos": {
+    "x": 16,
+    "y": 4,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Temperatura, sensación y punto de rocío",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"temperatura\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"temperatura\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"sensacion\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"sensación térmica\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"punto_rocio\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"punto de rocío\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 6,
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Humedad y nubosidad",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"humedad\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"humedad\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"nubosidad\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"nubosidad\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 7,
+   "gridPos": {
+    "x": 12,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Viento y ráfagas",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"viento\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"viento\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"rafaga\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"ráfaga\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "velocitykmh",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 8,
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Presión",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"presion\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"presión\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "pressurehpa",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 9,
+   "gridPos": {
+    "x": 8,
+    "y": 16,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "UV y lluvia última hora",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"uv\")\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)\n  |> set(key: \"serie\", value: \"índice UV\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-clima-unab\" and r._field == \"precipitacion\")\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)\n  |> set(key: \"serie\", value: \"lluvia (mm/h)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 10,
+   "gridPos": {
+    "x": 16,
+    "y": 16,
+    "w": 8,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "Calidad del aire",
+   "collapsed": false,
+   "panels": [],
+   "id": 11,
+   "gridPos": {
+    "x": 0,
+    "y": 23,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Índice global de calidad del aire — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"indice_global\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"indice_global\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"indice_global\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 12,
+   "gridPos": {
+    "x": 0,
+    "y": 24,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Índice global (Azure Maps)",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"indice_global\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"índice global\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear",
+      "thresholdsStyle": {
+       "mode": "dashed"
+      }
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 100
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 13,
+   "gridPos": {
+    "x": 8,
+    "y": 24,
+    "w": 16,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Contaminantes en el campus (µg/m³)",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"pm25\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"PM2.5\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"pm10\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"PM10\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"no2\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"NO₂\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"o3\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"O₃\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "E",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-aire-unab\" and r._field == \"so2\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"SO₂\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "conμgm3",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 14,
+   "gridPos": {
+    "x": 0,
+    "y": 31,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Estación urbana UCI (dataset): NO₂, NOx y benceno",
+   "description": "Dataset UCI Air Quality: 1 fila horaria cada 5 min (x12). La forma del día urbano (picos de tráfico) se comprime 12 veces.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"ds-aire-uci\" and r._field == \"no2\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"NO₂ (µg/m³)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"ds-aire-uci\" and r._field == \"nox\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"NOx (ppb)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"ds-aire-uci\" and r._field == \"benceno\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"benceno (µg/m³)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 15,
+   "gridPos": {
+    "x": 12,
+    "y": 31,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "row",
+   "title": "Bus UNAB Ruta 1 (api-bus-ruta1)",
+   "collapsed": false,
+   "panels": [],
+   "id": 16,
+   "gridPos": {
+    "x": 0,
+    "y": 39,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "geomap",
+   "title": "Recorrido del bus (últimas posiciones)",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-bus-ruta1\" and (r._field == \"lat\" or r._field == \"lon\" or r._field == \"velocidad\"))\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lon\", \"velocidad\"])\n  |> group()"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "color": {
+      "mode": "continuous-GrYlRd"
+     },
+     "unit": "velocitykmh"
+    },
+    "overrides": []
+   },
+   "options": {
+    "view": {
+     "id": "coords",
+     "lat": 7.115,
+     "lon": -73.11,
+     "zoom": 13
+    },
+    "controls": {
+     "showZoom": true,
+     "mouseWheelZoom": false
+    },
+    "basemap": {
+     "type": "default",
+     "name": "Mapa"
+    },
+    "layers": [
+     {
+      "type": "markers",
+      "name": "posiciones",
+      "location": {
+       "mode": "coords",
+       "latitude": "lat",
+       "longitude": "lon"
+      },
+      "config": {
+       "size": {
+        "fixed": 5
+       },
+       "color": {
+        "field": "velocidad",
+        "fixed": "dark-green"
+       },
+       "showLegend": true
+      }
+     }
+    ]
+   },
+   "id": 17,
+   "gridPos": {
+    "x": 0,
+    "y": 40,
+    "w": 12,
+    "h": 10
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Velocidad y distancia al campus",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-bus-ruta1\" and r._field == \"velocidad\")\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)\n  |> set(key: \"serie\", value: \"velocidad (km/h)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-bus-ruta1\" and r._field == \"distancia_campus\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"distancia al campus (km)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear",
+      "thresholdsStyle": {
+       "mode": "dashed"
+      }
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 60
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "distancia al campus (km)"
+      },
+      "properties": [
+       {
+        "id": "custom.axisPlacement",
+        "value": "right"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 18,
+   "gridPos": {
+    "x": 12,
+    "y": 40,
+    "w": 12,
+    "h": 10
+   }
+  }
+ ]
+}

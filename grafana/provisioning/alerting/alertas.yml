@@ -1,0 +1,241 @@
+# Generado por grafana/gen_alertas.py - Grafana Alerting aprovisionado (queda versionado en el repo).
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: api-campussense
+    receivers:
+      - uid: webhook-api
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: http://api:8000/api/alertas/grafana?token=$INGEST_TOKEN
+          httpMethod: POST
+
+policies:
+  - orgId: 1
+    receiver: api-campussense
+    group_by: [alertname, dispositivo]
+    group_wait: 30s
+    group_interval: 2m
+    repeat_interval: 4h
+
+groups:
+  - orgId: 1
+    name: umbrales-campus
+    folder: Alertas CampusSense
+    interval: 1m
+    rules:
+      - uid: co2-aula
+        title: CO2 alto Aula 101
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: influx-campus
+            model:
+              refId: A
+              intervalMs: 15000
+              maxDataPoints: 500
+              query: |
+                from(bucket: "campus")
+                  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                  |> filter(fn: (r) => r._measurement == "telemetria" and r.dispositivo == "aula-101" and r._field == "co2")
+                  |> keep(columns: ["_time", "_value", "dispositivo"])
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: mean, settings: {mode: dropNN}}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [1000]}
+        for: 5m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: warning
+          regla: co2-aula
+        annotations:
+          summary: 'CO2 promedio 5 min en Aula 101: {{ printf "%.0f" $values.B.Value }} ppm (umbral 1000)'
+      - uid: temp-aula
+        title: Temperatura alta Aula 101
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: influx-campus
+            model:
+              refId: A
+              intervalMs: 15000
+              maxDataPoints: 500
+              query: |
+                from(bucket: "campus")
+                  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                  |> filter(fn: (r) => r._measurement == "telemetria" and r.dispositivo == "aula-101" and r._field == "temperatura")
+                  |> keep(columns: ["_time", "_value", "dispositivo"])
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: mean, settings: {mode: dropNN}}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [28]}
+        for: 10m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: warning
+          regla: temp-aula
+        annotations:
+          summary: 'Temperatura promedio 10 min en Aula 101: {{ printf "%.1f" $values.B.Value }} °C (umbral 28)'
+      - uid: tanque-bajo
+        title: Tanque de agua bajo
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 120, to: 0}
+            datasourceUid: influx-campus
+            model:
+              refId: A
+              intervalMs: 15000
+              maxDataPoints: 500
+              query: |
+                from(bucket: "campus")
+                  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                  |> filter(fn: (r) => r._measurement == "telemetria" and r.dispositivo == "twin-tanque-agua" and r._field == "nivel")
+                  |> keep(columns: ["_time", "_value", "dispositivo"])
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last, settings: {mode: dropNN}}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: lt, params: [20]}
+        for: 1m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: critical
+          regla: tanque-bajo
+        annotations:
+          summary: 'Nivel del tanque: {{ printf "%.1f" $values.B.Value }} % (umbral 20)'
+      - uid: pm25-lab
+        title: PM2.5 alto Lab. Química
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: influx-campus
+            model:
+              refId: A
+              intervalMs: 15000
+              maxDataPoints: 500
+              query: |
+                from(bucket: "campus")
+                  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                  |> filter(fn: (r) => r._measurement == "telemetria" and r.dispositivo == "lab-quimica" and r._field == "pm25")
+                  |> keep(columns: ["_time", "_value", "dispositivo"])
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: mean, settings: {mode: dropNN}}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [35]}
+        for: 5m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: warning
+          regla: pm25-lab
+        annotations:
+          summary: 'PM2.5 promedio 5 min en Lab. Química: {{ printf "%.1f" $values.B.Value }} µg/m³ (umbral 35)'
+      - uid: aire-exterior
+        title: Calidad del aire exterior mala
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 3600, to: 0}
+            datasourceUid: influx-campus
+            model:
+              refId: A
+              intervalMs: 15000
+              maxDataPoints: 500
+              query: |
+                from(bucket: "campus")
+                  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                  |> filter(fn: (r) => r._measurement == "telemetria" and r.dispositivo == "api-aire-unab" and r._field == "indice_global")
+                  |> keep(columns: ["_time", "_value", "dispositivo"])
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last, settings: {mode: dropNN}}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [100]}
+        for: 0s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: warning
+          regla: aire-exterior
+        annotations:
+          summary: 'Índice global de calidad del aire: {{ printf "%.0f" $values.B.Value }} (umbral 100)'
+      - uid: sin-datos
+        title: Dispositivo sin datos
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: influx-campus
+            model:
+              refId: A
+              intervalMs: 15000
+              maxDataPoints: 500
+              query: |
+                from(bucket: "campus")
+                  |> range(start: -3d)
+                  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq" and r.dispositivo != "esp32-wokwi")
+                  |> group(columns: ["dispositivo"])
+                  |> last()
+                  |> map(fn: (r) => ({r with _value: float(v: uint(v: now()) - uint(v: r._time)) / 1000000000.0}))
+                  |> keep(columns: ["_time", "_value", "dispositivo"])
+          - refId: B
+            datasourceUid: __expr__
+            model: {refId: B, type: reduce, expression: A, reducer: last, settings: {mode: dropNN}}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator: {type: gt, params: [2700]}
+        for: 2m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: critical
+          regla: sin-datos
+        annotations:
+          summary: '{{ $labels.dispositivo }} lleva {{ printf "%.0f" $values.B.Value }} s sin telemetría'

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusSense UNAB</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%230f766e'/><circle cx='16' cy='16' r='12' fill='none' stroke='%230f766e' stroke-width='2.5'/></svg>">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="marca">
+    <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><circle cx="16" cy="16" r="5" fill="currentColor"/><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="4 3"/></svg>
+    <div><h1>CampusSense UNAB</h1><p>IoT a la medida · monitoreo y control del campus El Jardín, Bucaramanga</p></div>
+  </div>
+  <nav>
+    <a href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Grafana</a>
+    <a href="/docs" target="_blank" rel="noopener">API</a>
+    <a href="#arquitectura">Arquitectura</a>
+  </nav>
+</header>
+
+<main>
+  <section class="kpis" id="kpis">
+    <div class="kpi"><span id="k-linea">–</span><small>dispositivos en línea</small></div>
+    <div class="kpi"><span id="k-alertas">–</span><small>alertas activas</small></div>
+    <div class="kpi"><span id="k-cmd">–</span><small>comandos enviados</small></div>
+    <div class="kpi"><span id="k-uptime">–</span><small>plataforma en marcha</small></div>
+  </section>
+
+  <section>
+    <div class="titulo-seccion">
+      <h2>Dispositivos</h2>
+      <div class="filtros" id="filtros">
+        <button data-f="todos" class="activo">Todos</button>
+        <button data-f="real">Reales</button>
+        <button data-f="twin">Gemelos</button>
+        <button data-f="api">API</button>
+        <button data-f="dataset">Dataset</button>
+      </div>
+    </div>
+    <div class="grilla" id="grilla"></div>
+  </section>
+
+  <section class="dos-col">
+    <div>
+      <h2>Retroceso: comandos</h2>
+      <div class="tabla-env"><table id="t-cmd"><thead><tr><th>Hora</th><th>Dispositivo</th><th>Acción</th><th>Origen</th><th>Vía</th><th>ACK</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div>
+      <h2>Alertas</h2>
+      <div class="tabla-env"><table id="t-alertas"><thead><tr><th>Hora</th><th>Regla</th><th>Estado</th><th>Mensaje</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reglas automáticas</h2>
+    <div class="tabla-env"><table id="t-reglas"><thead><tr><th>ID</th><th>Regla</th><th>Condición</th><th>Acción</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section id="arquitectura">
+    <h2>Arquitectura de referencia</h2>
+    <img src="/static/arquitectura.png" alt="Arquitectura de referencia de CampusSense UNAB" class="arq" onerror="this.style.display='none'">
+  </section>
+</main>
+
+<dialog id="panel">
+  <form method="dialog" id="f-cmd">
+    <div class="panel-cab"><h3 id="p-titulo">Dispositivo</h3><button value="cancel" class="cerrar" aria-label="Cerrar">×</button></div>
+    <p class="sub" id="p-sub"></p>
+    <div id="p-valores" class="valores"></div>
+    <h4>Enviar comando</h4>
+    <label>Acción <select id="p-accion"></select></label>
+    <p class="ayuda" id="p-ayuda"></p>
+    <label>Parámetros (JSON) <textarea id="p-params" rows="3" spellcheck="false">{}</textarea></label>
+    <label>Clave de control <input id="p-clave" type="password" autocomplete="off" placeholder="la entrega el grupo en la sustentación"></label>
+    <div class="acciones"><button type="button" id="p-enviar" class="primario">Enviar comando</button></div>
+    <pre id="p-resp" class="resp"></pre>
+  </form>
+</dialog>
+
+<footer>Proyecto final IoT + Cloud + Sistemas Distribuidos · UNAB · Daniel Villamizar · Tomás Urieles · David Guerrero</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>

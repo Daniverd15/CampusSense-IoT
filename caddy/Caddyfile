@@ -1,0 +1,19 @@
+# Entrada web de CampusSense: HTTPS automatico (Let's Encrypt) para el dominio propio.
+#   /grafana/*  -> Grafana (servido desde subruta)
+#   /*          -> API FastAPI (front, /api, /docs)
+{$DOMINIO} {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	reverse_proxy /grafana* grafana:3000
+	reverse_proxy api:8000
+}
+
+# mismo contenido por HTTP en 127.0.0.1:8081 (solo tunel SSH, para pruebas)
+:8081 {
+	reverse_proxy /grafana* grafana:3000
+	reverse_proxy api:8000
+}

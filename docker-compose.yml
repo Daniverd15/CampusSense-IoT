@@ -1,0 +1,229 @@
+# CampusSense UNAB - plataforma IoT a la medida (proyecto final IoT + Cloud + Sistemas Distribuidos)
+#
+#   12 dispositivos (real, gemelo digital, API, dataset) -> 5 protocolos (MQTT, AMQP, STOMP, CoAP, HTTP)
+#   -> brokers (Mosquitto, RabbitMQ) -> ingestor/API -> InfluxDB 2 -> Grafana + front + motor de reglas
+#   Retroceso: la API envia comandos a cada dispositivo por su propio protocolo.
+#
+#   cp .env.example .env    # y cambiar TODAS las claves
+#   docker compose up -d --build
+#
+# Hacia Internet solo quedan 80/443 (Caddy: front, API y Grafana con HTTPS) y 1883 (MQTT con usuario,
+# para el ESP32 de Wokwi). RabbitMQ, InfluxDB y CoAP solo escuchan dentro de la red de Docker.
+name: campus
+
+x-plataforma: &plataforma
+  build: ./plataforma
+  image: campus-plataforma:1.0
+  restart: unless-stopped
+  mem_limit: 128m
+  environment: &env
+    TZ: UTC
+    MQTT_HOST: mosquitto
+    MQTT_USER: ${MQTT_USER}
+    MQTT_PASS: ${MQTT_PASS}
+    AMQP_HOST: rabbitmq
+    STOMP_HOST: rabbitmq
+    AMQP_USER: ${AMQP_USER}
+    AMQP_PASS: ${AMQP_PASS}
+    COAP_HOST: ingestor
+    API_URL: http://api:8000
+    INGEST_TOKEN: ${INGEST_TOKEN}
+    INFLUX_URL: http://influxdb:8086
+    INFLUX_ORG: unab
+    INFLUX_BUCKET: campus
+    INFLUX_TOKEN: ${INFLUX_TOKEN}
+  volumes:
+    - estado-dispositivos:/estado
+  logging: &logs
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
+
+services:
+  # ================================================================== brokers
+  mosquitto:
+    image: eclipse-mosquitto:2.0.20
+    restart: unless-stopped
+    mem_limit: 64m
+    environment:
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+      ESP32_USER: ${ESP32_USER}
+      ESP32_PASS: ${ESP32_PASS}
+    # claves y ACL se generan al arrancar desde .env: no hay secretos en el repositorio
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        rm -f /mosquitto/data/passwd && touch /mosquitto/data/passwd && chmod 0700 /mosquitto/data/passwd &&
+        mosquitto_passwd -b /mosquitto/data/passwd "$$MQTT_USER" "$$MQTT_PASS" &&
+        mosquitto_passwd -b /mosquitto/data/passwd "$$ESP32_USER" "$$ESP32_PASS" &&
+        printf 'user %s\ntopic readwrite #\ntopic read $$SYS/#\n\nuser %s\ntopic write campus/tele/esp32-wokwi\ntopic write campus/conexion/esp32-wokwi\ntopic read campus/cmd/esp32-wokwi\n' "$$MQTT_USER" "$$ESP32_USER" > /mosquitto/data/acl &&
+        chown mosquitto:mosquitto /mosquitto/data/passwd /mosquitto/data/acl && chmod 0700 /mosquitto/data/acl &&
+        exec /docker-entrypoint.sh mosquitto -c /mosquitto/config/mosquitto.conf
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+    ports:
+      - "1883:1883"
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -u \"$$MQTT_USER\" -P \"$$MQTT_PASS\" -t '$$SYS/broker/uptime' -C 1 -W 3 >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    logging: *logs
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine        # AMQP 0-9-1 + plugin STOMP
+    restart: unless-stopped
+    hostname: rabbit-campus
+    mem_limit: 450m
+    environment:
+      RABBITMQ_DEFAULT_USER: ${AMQP_USER}
+      RABBITMQ_DEFAULT_PASS: ${AMQP_PASS}
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-campus.conf:ro
+      - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:15672:15672"                   # consola de administracion solo por tunel SSH
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 60s
+    logging: *logs
+
+  # ================================================================== base de datos de series de tiempo
+  influxdb:
+    image: influxdb:2.7-alpine
+    restart: unless-stopped
+    mem_limit: 700m
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUX_USER}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_PASS}
+      DOCKER_INFLUXDB_INIT_ORG: unab
+      DOCKER_INFLUXDB_INIT_BUCKET: campus
+      DOCKER_INFLUXDB_INIT_RETENTION: 90d
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_TOKEN}
+      INFLUXD_REPORTING_DISABLED: "true"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    ports:
+      - "127.0.0.1:8086:8086"
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    logging: *logs
+
+  # ================================================================== ingesta y back-end
+  ingestor:
+    <<: *plataforma
+    command: ["python", "ingestor.py"]
+    depends_on:
+      influxdb: {condition: service_healthy}
+      mosquitto: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+
+  api:
+    <<: *plataforma
+    command: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    mem_limit: 256m
+    environment:
+      <<: *env
+      CONTROL_KEY: ${CONTROL_KEY}
+    depends_on:
+      influxdb: {condition: service_healthy}
+      mosquitto: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+
+  # ================================================================== dispositivos (uno por categoria)
+  dev-reales:
+    <<: *plataforma
+    command: ["python", "dispositivos_reales.py"]
+    depends_on: [ingestor]
+
+  dev-gemelos:
+    <<: *plataforma
+    command: ["python", "gemelos.py"]
+    depends_on: [ingestor, api]
+
+  dev-apis:
+    <<: *plataforma
+    command: ["python", "apis.py"]
+    environment:
+      <<: *env
+      AZMAPS_KEY: ${AZMAPS_KEY}
+      GPS_USER: ${GPS_USER}
+      GPS_PASS: ${GPS_PASS}
+    depends_on: [ingestor]
+
+  dev-datasets:
+    <<: *plataforma
+    command: ["python", "datasets.py"]
+    volumes:
+      - estado-dispositivos:/estado
+      - ./datasets:/app/datasets:ro
+    depends_on: [ingestor]
+
+  # ================================================================== visualizacion
+  grafana:
+    image: grafana/grafana-oss:11.6.0
+    restart: unless-stopped
+    mem_limit: 350m
+    environment:
+      GF_SERVER_DOMAIN: ${DOMINIO}
+      GF_SERVER_ROOT_URL: https://${DOMINIO}/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASS}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"           # lectura publica de los dashboards
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_DEFAULT_THEME: light
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: America/Bogota
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/01-resumen.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INGEST_TOKEN: ${INGEST_TOKEN}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      influxdb: {condition: service_healthy}
+    logging: *logs
+
+  # ================================================================== entrada web (HTTPS automatico)
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    mem_limit: 96m
+    environment:
+      DOMINIO: ${DOMINIO}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:8081:8081"                     # mismo sitio por HTTP local (tunel SSH / pruebas)
+    depends_on: [api, grafana]
+    logging: *logs
+
+volumes:
+  mosquitto-data:
+  rabbitmq-data:
+  influxdb-data:
+  influxdb-config:
+  grafana-data:
+  caddy-data:
+  caddy-config:
+  estado-dispositivos:

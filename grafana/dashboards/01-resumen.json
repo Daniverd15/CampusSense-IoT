@@ -1,0 +1,548 @@
+{
+ "uid": "campus-resumen",
+ "title": "CampusSense · 1. Resumen de la plataforma",
+ "tags": [
+  "campussense"
+ ],
+ "timezone": "America/Bogota",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "1m",
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "timepicker": {
+  "refresh_intervals": [
+   "30s",
+   "1m",
+   "5m",
+   "15m"
+  ]
+ },
+ "annotations": {
+  "list": [
+   {
+    "name": "Comandos (retroceso)",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#e8590c",
+    "target": {
+     "refId": "Anno",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
+    }
+   },
+   {
+    "name": "Alertas",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#c92a2a",
+    "target": {
+     "refId": "Alr",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"mensaje\")\n  |> map(fn: (r) => ({_time: r._time, text: r.regla + \" [\" + r.dispositivo + \"]: \" + r._value}))"
+    }
+   }
+  ]
+ },
+ "templating": {
+  "list": []
+ },
+ "links": [
+  {
+   "title": "CampusSense",
+   "type": "dashboards",
+   "tags": [
+    "campussense"
+   ],
+   "asDropdown": true
+  }
+ ],
+ "panels": [
+  {
+   "type": "text",
+   "title": "",
+   "transparent": true,
+   "options": {
+    "mode": "markdown",
+    "content": "## CampusSense UNAB — IoT a la medida\n12 dispositivos (**4 reales · 3 gemelos digitales · 3 API · 2 dataset**) por **MQTT, AMQP, STOMP, CoAP y HTTP** → Mosquitto / RabbitMQ → ingestor y API → **InfluxDB** → Grafana. El retroceso (comandos) usa el mismo protocolo de cada dispositivo. Hora de Bogotá."
+   },
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 3
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Dispositivos con datos (últimos 10 min)",
+   "description": "Dispositivos distintos que enviaron telemetría en los últimos 10 minutos (12 posibles; el ESP32 de Wokwi solo en sesiones).",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group(columns: [\"dispositivo\"])\n  |> last()\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"en línea\")"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#c92a2a",
+        "value": null
+       },
+       {
+        "color": "#f08c00",
+        "value": 9
+       },
+       {
+        "color": "#2f9e44",
+        "value": 11
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 3,
+    "w": 6,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Mensajes en el rango",
+   "description": "Mensajes de telemetría guardados en InfluxDB en el rango elegido.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"telemetría\")"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 3,
+   "gridPos": {
+    "x": 6,
+    "y": 3,
+    "w": 6,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Alertas activas",
+   "description": "Última transición de cada regla: 1 = disparada, 0 = resuelta.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: -30d)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"activa\")\n  |> group(columns: [\"regla\", \"dispositivo\"])\n  |> last()\n  |> group()\n  |> sum()\n  |> set(key: \"serie\", value: \"activas\")"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#2f9e44",
+        "value": null
+       },
+       {
+        "color": "#c92a2a",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 4,
+   "gridPos": {
+    "x": 12,
+    "y": 3,
+    "w": 6,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Comandos en el rango",
+   "description": "Comandos de retroceso enviados (manuales y automáticos por regla).",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"cmd_id\")\n  |> group()\n  |> count()\n  |> set(key: \"serie\", value: \"comandos\")"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#e8590c"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 5,
+   "gridPos": {
+    "x": 18,
+    "y": 3,
+    "w": 6,
+    "h": 4
+   }
+  },
+  {
+   "type": "table",
+   "title": "Estado de los dispositivos (último mensaje)",
+   "description": "Último mensaje de cada dispositivo, su protocolo y la latencia dispositivo → InfluxDB.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: -7d)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"lat_ms\")\n  |> group(columns: [\"dispositivo\", \"tipo\", \"protocolo\"])\n  |> last()\n  |> map(fn: (r) => ({dispositivo: r.dispositivo, tipo: r.tipo, protocolo: r.protocolo, ultimo: r._time, latencia_ms: r._value,\n       hace_s: (uint(v: now()) - uint(v: r._time)) / uint(v: 1000000000)}))\n  |> group()\n  |> sort(columns: [\"tipo\", \"dispositivo\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "hace_s"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background",
+         "mode": "basic"
+        }
+       },
+       {
+        "id": "unit",
+        "value": "s"
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "green",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 180
+          },
+          {
+           "color": "red",
+           "value": 1200
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "ultimo"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "dateTimeAsLocal"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    }
+   },
+   "transformations": [],
+   "id": 6,
+   "gridPos": {
+    "x": 0,
+    "y": 7,
+    "w": 12,
+    "h": 10
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Mensajes por minuto según protocolo",
+   "description": "Caudal de mensajes por protocolo. Un hueco cae a 0.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r._field == \"seq\")\n  |> group(columns: [\"protocolo\"])\n  |> aggregateWindow(every: v.windowPeriod, fn: count, createEmpty: true)\n  |> map(fn: (r) => ({r with _value: float(v: r._value) * 60000000000.0 / float(v: int(v: v.windowPeriod))}))\n  |> map(fn: (r) => ({r with serie: r.protocolo}))\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 7,
+   "gridPos": {
+    "x": 12,
+    "y": 7,
+    "w": 12,
+    "h": 10
+   }
+  },
+  {
+   "type": "table",
+   "title": "Últimas alertas",
+   "description": "Disparos y resoluciones del motor de reglas (origen=reglas) y de Grafana Alerting (origen=grafana).",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\")\n  |> pivot(rowKey: [\"_time\", \"regla\", \"dispositivo\", \"severidad\", \"origen\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group()\n  |> keep(columns: [\"_time\", \"regla\", \"dispositivo\", \"severidad\", \"estado\", \"mensaje\", \"origen\"])\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 50)"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    }
+   },
+   "transformations": [],
+   "id": 8,
+   "gridPos": {
+    "x": 0,
+    "y": 17,
+    "w": 12,
+    "h": 9
+   }
+  },
+  {
+   "type": "table",
+   "title": "Últimos comandos de retroceso",
+   "description": "Cada comando queda registrado con su origen (manual desde el front o regla automática) y el protocolo por el que viajó.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\")\n  |> pivot(rowKey: [\"_time\", \"dispositivo\", \"accion\", \"origen\", \"protocolo\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group()\n  |> keep(columns: [\"_time\", \"dispositivo\", \"accion\", \"params\", \"origen\", \"protocolo\"])\n  |> sort(columns: [\"_time\"], desc: true)\n  |> limit(n: 50)"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false
+    }
+   },
+   "transformations": [],
+   "id": 9,
+   "gridPos": {
+    "x": 12,
+    "y": 17,
+    "w": 12,
+    "h": 9
+   }
+  }
+ ]
+}

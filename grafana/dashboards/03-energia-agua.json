@@ -1,0 +1,1048 @@
+{
+ "uid": "campus-energia",
+ "title": "CampusSense · 3. Energía, HVAC y agua",
+ "tags": [
+  "campussense"
+ ],
+ "timezone": "America/Bogota",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "1m",
+ "graphTooltip": 1,
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "timepicker": {
+  "refresh_intervals": [
+   "30s",
+   "1m",
+   "5m",
+   "15m"
+  ]
+ },
+ "annotations": {
+  "list": [
+   {
+    "name": "Comandos (retroceso)",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#e8590c",
+    "target": {
+     "refId": "Anno",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
+    }
+   },
+   {
+    "name": "Alertas",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": true,
+    "iconColor": "#c92a2a",
+    "target": {
+     "refId": "Alr",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"alertas\" and r._field == \"mensaje\")\n  |> map(fn: (r) => ({_time: r._time, text: r.regla + \" [\" + r.dispositivo + \"]: \" + r._value}))"
+    }
+   }
+  ]
+ },
+ "templating": {
+  "list": []
+ },
+ "links": [
+  {
+   "title": "CampusSense",
+   "type": "dashboards",
+   "tags": [
+    "campussense"
+   ],
+   "asDropdown": true
+  }
+ ],
+ "panels": [
+  {
+   "type": "text",
+   "title": "",
+   "transparent": true,
+   "options": {
+    "mode": "markdown",
+    "content": "**Medidor Bloque A** (real, AMQP) · **Planta solar 12 kWp** (gemelo, HTTP) · **HVAC Aula 101** (gemelo, CoAP) · **Tanque 20 m³** (gemelo, CoAP). La potencia de red = carga − solar. Regla R2: demanda > 30 kW → HVAC a eco."
+   },
+   "id": 1,
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 3
+   }
+  },
+  {
+   "type": "row",
+   "title": "Energía",
+   "collapsed": false,
+   "panels": [],
+   "id": 2,
+   "gridPos": {
+    "x": 0,
+    "y": 3,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Potencia de red Bloque A — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "kwatt",
+     "decimals": 2,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 3,
+   "gridPos": {
+    "x": 0,
+    "y": 4,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Potencia solar — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "kwatt",
+     "decimals": 2,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 4,
+   "gridPos": {
+    "x": 8,
+    "y": 4,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Irradiancia — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Wm2",
+     "decimals": 0,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 5,
+   "gridPos": {
+    "x": 16,
+    "y": 4,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Potencia de red vs generación solar vs HVAC",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"red Bloque A (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"solar (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"potencia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"HVAC Aula 101 (kW)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "kwatt",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear",
+      "thresholdsStyle": {
+       "mode": "dashed"
+      }
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 30
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 6,
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 16,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Energía solar del día",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"energia_dia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"energía del día\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "kwatth",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 7,
+   "gridPos": {
+    "x": 16,
+    "y": 8,
+    "w": 8,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Irradiancia y temperatura de panel",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"irradiancia\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"irradiancia (W/m²)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-panel-solar\" and r._field == \"temp_panel\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"temp. panel (°C)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "temp. panel (°C)"
+      },
+      "properties": [
+       {
+        "id": "custom.axisPlacement",
+        "value": "right"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 8,
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 12,
+    "h": 7
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Voltaje y factor de potencia",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"voltaje\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"voltaje (V)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"medidor-bloque-a\" and r._field == \"fp\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"factor de potencia\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "factor de potencia"
+      },
+      "properties": [
+       {
+        "id": "custom.axisPlacement",
+        "value": "right"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 9,
+   "gridPos": {
+    "x": 12,
+    "y": 16,
+    "w": 12,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "Gemelo digital HVAC — modelo vs aula real",
+   "collapsed": false,
+   "panels": [],
+   "id": 10,
+   "gridPos": {
+    "x": 0,
+    "y": 23,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Temperatura medida (aula-101) vs predicha por el gemelo",
+   "description": "Un gemelo digital sirve si predice bien: la diferencia (error del modelo) debería quedarse cerca de 0.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"aula-101\" and r._field == \"temperatura\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"medida (aula-101)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"temp_modelo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"modelo del gemelo\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"setpoint\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"setpoint\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 11,
+   "gridPos": {
+    "x": 0,
+    "y": 24,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Error del modelo y modo del HVAC",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"error_modelo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"error medido − modelo (°C)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-hvac-aula101\" and r._field == \"modo\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> set(key: \"serie\", value: \"modo (0 apag. 1 auto 2 vent. 3 eco)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "modo (0 apag. 1 auto 2 vent. 3 eco)"
+      },
+      "properties": [
+       {
+        "id": "custom.axisPlacement",
+        "value": "right"
+       },
+       {
+        "id": "custom.lineInterpolation",
+        "value": "stepAfter"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 12,
+   "gridPos": {
+    "x": 12,
+    "y": 24,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "row",
+   "title": "Gemelo digital tanque de agua",
+   "collapsed": false,
+   "panels": [],
+   "id": 13,
+   "gridPos": {
+    "x": 0,
+    "y": 32,
+    "w": 24,
+    "h": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Nivel del tanque — promedio / máx / mín del rango",
+   "description": "Calculado sobre todo el rango elegido en el selector de tiempo.",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> mean()\n  |> set(key: \"serie\", value: \"promedio\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> max()\n  |> set(key: \"serie\", value: \"máximo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> group()\n  |> min()\n  |> set(key: \"serie\", value: \"mínimo\")\n  |> keep(columns: [\"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 1,
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "#0f766e"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "orientation": "horizontal",
+    "justifyMode": "auto"
+   },
+   "id": 14,
+   "gridPos": {
+    "x": 0,
+    "y": 33,
+    "w": 8,
+    "h": 4
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Nivel y bomba",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"nivel\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"nivel (%)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"bomba\")\n  |> aggregateWindow(every: v.windowPeriod, fn: max, createEmpty: false)\n  |> set(key: \"serie\", value: \"bomba (0/1)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear",
+      "thresholdsStyle": {
+       "mode": "dashed"
+      }
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     },
+     "min": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "transparent",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 20
+       }
+      ]
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "bomba (0/1)"
+      },
+      "properties": [
+       {
+        "id": "custom.axisPlacement",
+        "value": "hidden"
+       },
+       {
+        "id": "custom.drawStyle",
+        "value": "bars"
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 20
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 15,
+   "gridPos": {
+    "x": 8,
+    "y": 33,
+    "w": 16,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Caudales de entrada y salida",
+   "description": "",
+   "datasource": {
+    "type": "influxdb",
+    "uid": "influx-campus"
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"caudal_entrada\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"entrada (bomba)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "influx-campus"
+     },
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"twin-tanque-agua\" and r._field == \"caudal_salida\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"serie\", value: \"salida (consumo)\")\n  |> keep(columns: [\"_time\", \"_value\", \"serie\"])"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1.5,
+      "fillOpacity": 6,
+      "showPoints": "never",
+      "spanNulls": 3600000,
+      "lineInterpolation": "linear"
+     },
+     "displayName": "${__field.labels.serie}",
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "min",
+      "mean",
+      "max",
+      "lastNotNull"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "id": 16,
+   "gridPos": {
+    "x": 0,
+    "y": 41,
+    "w": 24,
+    "h": 7
+   }
+  }
+ ]
+}
