@@ -1,175 +1,209 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-CO">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CampusSense UNAB</title>
-<meta name="description" content="Centro de control IoT del campus UNAB: 12 dispositivos, 5 protocolos, retroceso y reglas en tiempo real.">
-<meta name="theme-color" content="#0b1215">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230b1215'/><circle cx='16' cy='16' r='4.5' fill='%2314b8a6'/><circle cx='16' cy='16' r='10' fill='none' stroke='%2314b8a6' stroke-width='2' stroke-dasharray='3.5 3'/></svg>">
+<meta name="description" content="Plataforma IoT del campus UNAB: 12 dispositivos, 5 protocolos y retroceso en tiempo real.">
+<meta name="theme-color" content="#3B1561">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%236D2CA0'/><circle cx='11' cy='21' r='3' fill='%23F59C00'/><path d='M11 13a8 8 0 0 1 8 8M11 7a14 14 0 0 1 14 14' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="/static/style.css">
-<script>
-  try { const t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
-</script>
+<script>try { const t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 </head>
 <body>
-<div class="fondo-red" aria-hidden="true"></div>
+<a class="saltar" href="#dispositivos">Saltar a los dispositivos</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-cmd" viewBox="0 0 24 24"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 4l9 16H3L12 4zm0 6v4m0 3v.5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bus" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="15" rx="3" fill="currentColor"/><rect x="7" y="6" width="10" height="5" rx="1" fill="#fff"/><circle cx="8.5" cy="14.5" r="1.3" fill="#fff"/><circle cx="15.5" cy="14.5" r="1.3" fill="#fff"/><path d="M7 18v2M17 18v2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
 
 <header class="barra">
-  <a class="marca" href="#inicio">
-    <svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><rect width="32" height="32" rx="9" class="marca-bg"/><circle cx="16" cy="16" r="4.5" class="marca-nucleo"/><circle cx="16" cy="16" r="10" class="marca-anillo"/></svg>
-    <span><b>CampusSense</b> <small>UNAB</small></span>
+  <a class="marca" href="#inicio" aria-label="CampusSense UNAB, inicio">
+    <svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><rect width="32" height="32" rx="9" class="m-fondo"/><circle cx="11" cy="21" r="3" class="m-punto"/><path d="M11 13a8 8 0 0 1 8 8M11 7a14 14 0 0 1 14 14" class="m-ondas"/></svg>
+    <span class="m-txt"><b>CampusSense</b><small>UNAB · IoT a la medida</small></span>
   </a>
-  <nav class="menu" id="menu">
-    <a href="#flujo">Flujo</a>
+  <nav class="menu" aria-label="Secciones">
     <a href="#dispositivos">Dispositivos</a>
-    <a href="#mapa-sec">Mapa</a>
+    <a href="#analisis">Análisis</a>
+    <a href="#retroceso">Retroceso</a>
     <a href="#protocolos">Protocolos</a>
     <a href="#reglas">Reglas</a>
-    <a href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Grafana ↗</a>
-    <a href="/docs" target="_blank" rel="noopener">API ↗</a>
+    <a href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Grafana <svg width="12" height="12"><use href="#i-ext"/></svg></a>
   </nav>
   <div class="barra-der">
-    <span class="vivo" id="vivo" title="Conexión en tiempo real (Server-Sent Events)"><i></i><span id="vivo-txt">conectando…</span></span>
-    <button class="icono" id="tema" aria-label="Cambiar tema" title="Cambiar tema">
+    <span class="vivo" id="vivo" title="Conexión en tiempo real con la plataforma (Server-Sent Events)"><i></i><span id="vivo-txt">conectando</span></span>
+    <button class="icono" id="tema" aria-label="Cambiar entre tema claro y oscuro">
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="sol" d="M12 4V2M12 22v-2M4 12H2M22 12h-2M5.6 5.6 4.2 4.2M19.8 19.8l-1.4-1.4M5.6 18.4l-1.4 1.4M19.8 4.2l-1.4 1.4M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/><path class="luna" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
     </button>
   </div>
 </header>
 
 <main>
-  <!-- ============================================================ HERO -->
-  <section class="hero" id="inicio">
-    <div class="hero-txt">
+  <!-- ============================================================ ESCENA: la plataforma trabajando -->
+  <section class="escena" id="inicio" aria-labelledby="t-inicio">
+    <div class="escena-txt">
       <p class="ceja">Proyecto final · IoT + Cloud + Sistemas Distribuidos · UNAB</p>
-      <h1>El campus,<br><span class="degradado">en tiempo real.</span></h1>
-      <p class="lead">Doce dispositivos —sensores reales, gemelos digitales, APIs y datasets— hablan con una plataforma propia en Azure por
-        <b>MQTT, AMQP, STOMP, CoAP y HTTP</b>. Desde aquí se ve cada dato llegar y se le habla de vuelta a cada sensor.</p>
-      <div class="chips-hero">
-        <span>12 dispositivos</span><span>5 protocolos</span><span>retroceso bidireccional</span><span>7 reglas automáticas</span><span>HTTPS · Azure</span>
+      <h1 id="t-inicio">El campus UNAB, transmitiendo ahora.</h1>
+      <p class="lead">Doce dispositivos envían datos por <b>MQTT, AMQP, STOMP, CoAP y HTTP</b> a una plataforma propia en Azure, y cada uno acepta órdenes de vuelta. Cada punto del diagrama es un mensaje real que está llegando.</p>
+      <div class="toma" id="toma" aria-label="Avance de la toma de datos">
+        <div class="toma-cab"><span>Toma de datos</span><b id="toma-dias">–</b></div>
+        <div class="toma-barra"><i id="toma-relleno"></i><span class="hito" style="left:66.6%" title="mínimo exigido: 4 días"></span></div>
+        <div class="toma-pie"><span id="toma-desde">desde –</span><span>meta 4 a 6 días</span></div>
       </div>
       <div class="cta">
-        <a class="btn primario" href="#dispositivos">Controlar dispositivos</a>
-        <a class="btn" href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Abrir Grafana ↗</a>
+        <a class="btn primario" href="#dispositivos">Hablarle a un dispositivo</a>
+        <a class="btn" href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Grafana <svg width="14" height="14"><use href="#i-ext"/></svg></a>
       </div>
     </div>
-    <div class="kpis">
-      <div class="kpi"><small>En línea</small><b><span id="k-linea">–</span><em>/12</em></b><div class="anillo" id="k-anillo"></div></div>
-      <div class="kpi"><small>Mensajes / min</small><b id="k-msg">–</b><canvas id="k-spark" height="38"></canvas></div>
-      <div class="kpi"><small>Alertas activas</small><b id="k-alertas">–</b><span class="nota" id="k-alertas-nota">sin alertas</span></div>
-      <div class="kpi"><small>Comandos enviados</small><b id="k-cmd">–</b><span class="nota" id="k-cmd-nota">–</span></div>
-    </div>
+    <figure class="escena-flujo">
+      <figcaption class="flujo-cab">
+        <span class="en-vivo"><i></i>En vivo</span>
+        <span class="ticker" id="ticker" aria-live="off">esperando el primer mensaje…</span>
+      </figcaption>
+      <div class="flujo-env"><svg id="flujo-svg" viewBox="0 0 1200 430" role="img" aria-label="Diagrama animado: dispositivos, protocolos, brokers, procesamiento, base de datos y visualización"></svg></div>
+      <div class="leyenda" aria-hidden="true">
+        <span><i style="--c:var(--real)"></i>real</span><span><i style="--c:var(--twin)"></i>gemelo</span><span><i style="--c:var(--api)"></i>API</span>
+        <span><i style="--c:var(--dataset)"></i>dataset</span><span><i style="--c:var(--cmd)"></i>comando de retroceso</span>
+      </div>
+    </figure>
   </section>
 
-  <!-- ============================================================ FLUJO -->
-  <section class="tarjeta" id="flujo">
-    <div class="cab">
-      <div><h2>Flujo de datos en vivo</h2><p>Cada punto es un mensaje real: sube por su protocolo, pasa por el broker, el ingestor lo valida y queda en InfluxDB. Los naranjas son comandos de retroceso bajando al dispositivo.</p></div>
-      <div class="leyenda">
-        <span><i style="--c:var(--real)"></i>real</span><span><i style="--c:var(--twin)"></i>gemelo</span><span><i style="--c:var(--api)"></i>API</span>
-        <span><i style="--c:var(--dataset)"></i>dataset</span><span><i style="--c:var(--cmd)"></i>comando</span>
-      </div>
-    </div>
-    <div class="flujo-env"><svg id="flujo-svg" viewBox="0 0 1200 430" role="img" aria-label="Diagrama animado del flujo de datos"></svg></div>
+  <section class="franja" aria-label="Indicadores">
+    <div><small>En línea</small><b><span id="k-linea">–</span><em>/12</em></b><span class="nota" id="k-linea-nota">–</span></div>
+    <div><small>Mensajes por minuto</small><b id="k-msg">–</b><canvas id="k-spark" height="30" aria-hidden="true"></canvas></div>
+    <div><small>Alertas activas</small><b id="k-alertas">–</b><span class="nota" id="k-alertas-nota">–</span></div>
+    <div><small>Comandos enviados</small><b id="k-cmd">–</b><span class="nota" id="k-cmd-nota">–</span></div>
   </section>
 
   <!-- ============================================================ DISPOSITIVOS -->
-  <section id="dispositivos">
-    <div class="titulo-sec">
-      <div><h2>Dispositivos</h2><p>Toca uno para ver sus gráficas y enviarle comandos.</p></div>
+  <section id="dispositivos" aria-labelledby="t-disp">
+    <div class="sec-cab">
+      <div><p class="num">01</p><h2 id="t-disp">Cuatro familias, doce dispositivos</h2>
+        <p>Cada tarjeta dice de dónde sale su dato. Tócala para ver sus gráficas y enviarle comandos.</p></div>
       <div class="herramientas">
-        <div class="filtros" id="filtros" role="tablist">
-          <button data-f="todos" class="activo">Todos <em id="c-todos"></em></button>
-          <button data-f="real">Reales <em id="c-real"></em></button>
-          <button data-f="twin">Gemelos <em id="c-twin"></em></button>
-          <button data-f="api">API <em id="c-api"></em></button>
-          <button data-f="dataset">Dataset <em id="c-dataset"></em></button>
+        <div class="filtros" id="filtros" role="group" aria-label="Filtrar por familia">
+          <button data-f="todos" class="activo" aria-pressed="true">Todos <em id="c-todos"></em></button>
+          <button data-f="real" aria-pressed="false">Reales <em id="c-real"></em></button>
+          <button data-f="twin" aria-pressed="false">Gemelos <em id="c-twin"></em></button>
+          <button data-f="api" aria-pressed="false">API <em id="c-api"></em></button>
+          <button data-f="dataset" aria-pressed="false">Dataset <em id="c-dataset"></em></button>
         </div>
-        <input id="buscar" type="search" placeholder="Buscar…" aria-label="Buscar dispositivo">
+        <input id="buscar" type="search" placeholder="Buscar dispositivo" aria-label="Buscar dispositivo o protocolo">
       </div>
     </div>
-    <div class="grilla" id="grilla"></div>
+    <div id="familias"></div>
+  </section>
+
+  <!-- ============================================================ ANALISIS DEL PERIODO -->
+  <section id="analisis" class="tarjeta" aria-labelledby="t-ana">
+    <div class="sec-cab">
+      <div><p class="num">02</p><h2 id="t-ana">Análisis del periodo</h2>
+        <p>Promedio, mínimo y máximo de cada variable en el rango que elijas, calculados en InfluxDB sobre todos los datos guardados.</p></div>
+      <div class="herramientas">
+        <select id="a-disp" aria-label="Dispositivo a analizar"></select>
+        <div class="filtros" id="a-rango" role="group" aria-label="Rango de tiempo">
+          <button data-h="1">1 h</button><button data-h="24" class="activo">24 h</button><button data-h="96">4 d</button><button data-h="144">6 d</button><button data-h="336">todo</button>
+        </div>
+      </div>
+    </div>
+    <div class="analisis-cuerpo">
+      <div class="tabla-env"><table class="t-ana" id="t-ana"><thead><tr><th>Variable</th><th class="d">Mínimo</th><th class="d">Promedio</th><th class="d">Máximo</th><th>Recorrido en el rango físico</th><th class="d">Muestras</th></tr></thead><tbody></tbody></table></div>
+      <aside class="ana-lado" id="ana-lado"></aside>
+    </div>
+  </section>
+
+  <!-- ============================================================ RETROCESO -->
+  <section id="retroceso" aria-labelledby="t-ret">
+    <div class="sec-cab"><div><p class="num">03</p><h2 id="t-ret">Retroceso: la plataforma también habla</h2>
+      <p>Cada dispositivo recibe órdenes por su mismo protocolo y responde con un ACK. Aquí queda cada comando, el camino que tomó y lo que contestó el dispositivo.</p></div></div>
+    <div class="caminos" id="caminos"></div>
+    <div class="tarjeta sin-pad">
+      <div class="tabla-env alto"><table id="t-cmd"><thead><tr><th>Hora</th><th>Dispositivo</th><th>Comando</th><th>Origen</th><th>Camino</th><th>Respuesta</th></tr></thead><tbody></tbody></table></div>
+    </div>
   </section>
 
   <!-- ============================================================ MAPA + CONSOLA -->
-  <section class="dos" id="mapa-sec">
+  <section class="dos" aria-label="Mapa del campus y consola de eventos">
     <div class="tarjeta sin-pad">
-      <div class="cab pad"><div><h2>Campus El Jardín</h2><p>Bus Ruta 1 en vivo (GPS) y nodos del campus (ubicación ilustrativa).</p></div><span class="pildora" id="bus-estado">bus: –</span></div>
-      <div id="mapa"></div>
+      <div class="tar-cab"><div><h3>Campus El Jardín</h3><p>Bus de la Ruta 1 en vivo por GPS y su recorrido de las últimas 12 h. Los nodos del campus tienen ubicación ilustrativa.</p></div><span class="pildora" id="bus-estado">bus: –</span></div>
+      <div id="mapa" role="region" aria-label="Mapa"></div>
     </div>
     <div class="tarjeta consola-t">
-      <div class="cab"><div><h2>Consola</h2><p>Eventos de la plataforma, tal como llegan.</p></div>
-        <div class="filtros chicos" id="c-filtros"><button data-c="todo" class="activo">todo</button><button data-c="dato">datos</button><button data-c="cmd">retroceso</button><button data-c="alerta">alertas</button><button id="pausa" title="Pausar">❚❚</button></div>
+      <div class="tar-cab"><div><h3>Consola de eventos</h3><p>Lo que recibe la plataforma, tal como llega.</p></div>
+        <div class="filtros chicos" id="c-filtros" role="group" aria-label="Filtrar consola"><button data-c="todo" class="activo">todo</button><button data-c="dato">datos</button><button data-c="cmd">retroceso</button><button data-c="alerta">alertas</button><button id="pausa" aria-label="Pausar consola">pausa</button></div>
       </div>
-      <ol class="consola" id="consola" aria-live="off"></ol>
+      <ol class="consola" id="consola"></ol>
     </div>
   </section>
 
   <!-- ============================================================ PROTOCOLOS -->
-  <section id="protocolos">
-    <div class="titulo-sec"><div><h2>Protocolos</h2><p>Última hora de subida y tiempo de ida y vuelta de los ACK de comandos.</p></div></div>
+  <section id="protocolos" aria-labelledby="t-pro">
+    <div class="sec-cab"><div><p class="num">04</p><h2 id="t-pro">Cinco protocolos, medidos</h2>
+      <p>Mensajes y latencia de subida de la última hora, y tiempo de ida y vuelta de los ACK de comandos. Sale de los datos guardados, no de una tabla teórica.</p></div></div>
     <div class="protos" id="protos"></div>
   </section>
 
   <!-- ============================================================ REGLAS + ALERTAS -->
-  <section class="dos" id="reglas">
+  <section class="dos" id="reglas" aria-label="Reglas y alertas">
     <div class="tarjeta">
-      <div class="cab"><div><h2>Reglas automáticas</h2><p>El motor evalúa cada 30 s y actúa solo sobre los dispositivos.</p></div></div>
+      <div class="tar-cab"><div><p class="num">05</p><h3>Reglas automáticas</h3><p>El motor revisa cada 30 s y actúa solo sobre los dispositivos, sin que nadie toque nada.</p></div></div>
       <ul class="reglas" id="l-reglas"></ul>
     </div>
     <div class="tarjeta">
-      <div class="cab"><div><h2>Alertas</h2><p>Motor de reglas y Grafana Alerting.</p></div></div>
+      <div class="tar-cab"><div><h3>Alertas</h3><p>Del motor de reglas y de Grafana Alerting.</p></div></div>
       <ul class="alertas" id="l-alertas"></ul>
     </div>
   </section>
 
-  <section class="tarjeta" id="comandos">
-    <div class="cab"><div><h2>Historial de retroceso</h2><p>Cada comando, por dónde viajó y la respuesta del dispositivo.</p></div></div>
-    <div class="tabla-env"><table id="t-cmd"><thead><tr><th>Hora</th><th>Dispositivo</th><th>Comando</th><th>Origen</th><th>Vía</th><th>ACK</th></tr></thead><tbody></tbody></table></div>
-  </section>
-
-  <section class="tarjeta" id="arquitectura">
-    <div class="cab"><div><h2>Arquitectura de referencia</h2><p>Dispositivos → protocolos → brokers → procesamiento → almacenamiento → visualización, todo en una VM de Azure con URL propia.</p></div></div>
-    <a href="/static/arquitectura.png" target="_blank" rel="noopener"><img src="/static/arquitectura.png" alt="Arquitectura de referencia de CampusSense UNAB" class="arq" loading="lazy"></a>
+  <section id="arquitectura" class="tarjeta" aria-labelledby="t-arq">
+    <div class="sec-cab"><div><p class="num">06</p><h2 id="t-arq">Arquitectura de referencia</h2>
+      <p>Dispositivos, protocolos, brokers, procesamiento, almacenamiento y visualización en una VM de Azure con URL propia y HTTPS.</p></div>
+      <a class="btn" href="https://github.com/Daniverd15/CampusSense-IoT" target="_blank" rel="noopener">Código en GitHub <svg width="14" height="14"><use href="#i-ext"/></svg></a></div>
+    <a href="/static/arquitectura.png" target="_blank" rel="noopener"><img src="/static/arquitectura.png" alt="Arquitectura de referencia de CampusSense UNAB" class="arq" loading="lazy" width="2400" height="1200"></a>
   </section>
 </main>
 
 <footer>
-  <div><b>CampusSense UNAB</b> · Proyecto final IoT + Cloud + Sistemas Distribuidos · Universidad Autónoma de Bucaramanga</div>
-  <div>Daniel Villamizar · Tomás Urieles · David Guerrero · <a href="https://github.com/Daniverd15/CampusSense-IoT" target="_blank" rel="noopener">GitHub</a></div>
+  <div><b>CampusSense UNAB</b> · Proyecto final de IoT + Cloud + Sistemas Distribuidos · Universidad Autónoma de Bucaramanga</div>
+  <div>Daniel Villamizar · Tomás Urieles · David Guerrero · <a href="/docs" target="_blank" rel="noopener">API</a> · <a href="https://github.com/Daniverd15/CampusSense-IoT" target="_blank" rel="noopener">GitHub</a></div>
 </footer>
 
 <!-- ============================================================ PANEL DE DISPOSITIVO -->
 <div class="velo" id="velo" hidden></div>
-<aside class="panel" id="panel" aria-hidden="true" aria-labelledby="p-nombre">
+<aside class="panel" id="panel" aria-hidden="true" aria-labelledby="p-nombre" role="dialog" aria-modal="true">
   <header class="panel-cab">
     <div>
       <div class="p-chips" id="p-chips"></div>
       <h3 id="p-nombre">Dispositivo</h3>
       <p id="p-sub"></p>
+      <p class="origen" id="p-origen"></p>
     </div>
-    <button class="icono" id="p-cerrar" aria-label="Cerrar">✕</button>
+    <button class="icono" id="p-cerrar" aria-label="Cerrar panel"><svg width="16" height="16"><use href="#i-x"/></svg></button>
   </header>
   <div class="panel-cuerpo">
     <div class="p-estado" id="p-estado"></div>
     <div class="p-sec">
       <div class="p-sec-cab"><h4>Gráficas</h4>
-        <div class="filtros chicos" id="p-rango"><button data-h="1">1 h</button><button data-h="6">6 h</button><button data-h="24" class="activo">24 h</button><button data-h="96">4 d</button><button data-h="144">6 d</button></div>
+        <div class="filtros chicos" id="p-rango" role="group" aria-label="Rango de las gráficas"><button data-h="1">1 h</button><button data-h="6">6 h</button><button data-h="24" class="activo">24 h</button><button data-h="96">4 d</button><button data-h="144">6 d</button></div>
       </div>
       <div class="p-graficas" id="p-graficas"></div>
     </div>
     <div class="p-sec">
-      <div class="p-sec-cab"><h4>Retroceso</h4><span class="nota" id="p-via"></span></div>
+      <div class="p-sec-cab"><h4>Retroceso</h4><span class="nota mono" id="p-via"></span></div>
       <div class="controles" id="p-controles"></div>
       <label class="clave">Clave de control
         <input id="p-clave" type="password" autocomplete="off" placeholder="la entrega el grupo en la sustentación"></label>
       <details class="avanzado"><summary>Comando avanzado (JSON)</summary>
-        <div class="fila"><select id="p-accion"></select><button class="btn chico" id="p-json-enviar">Enviar</button></div>
-        <textarea id="p-params" rows="2" spellcheck="false">{}</textarea>
+        <div class="fila"><select id="p-accion" aria-label="Acción"></select><button class="btn chico" id="p-json-enviar">Enviar</button></div>
+        <textarea id="p-params" rows="2" spellcheck="false" aria-label="Parámetros en JSON">{}</textarea>
         <p class="nota" id="p-ayuda"></p>
       </details>
     </div>

@@ -233,10 +233,10 @@ def ultimo(dev, var):
 
 
 REGLAS = [
-    {"id": "R1", "nombre": "CO2 alto en Aula 101 -> HVAC en ventilación",
+    {"id": "R1", "nombre": "CO₂ alto en Aula 101 → HVAC en ventilación",
      "condicion": "promedio 5 min de aula-101.co2 > 1000 ppm (se libera < 750 ppm)",
      "accion": "twin-hvac-aula101 modo=ventilacion; al liberar modo=auto"},
-    {"id": "R2", "nombre": "Demanda alta Bloque A -> HVAC en eco",
+    {"id": "R2", "nombre": "Demanda alta en el Bloque A → HVAC en eco",
      "condicion": "promedio 5 min de medidor-bloque-a.potencia > 30 kW (se libera < 24 kW)",
      "accion": "twin-hvac-aula101 modo=eco si estaba en auto; al liberar modo=auto"},
     {"id": "R3", "nombre": "Tanque de agua bajo",
@@ -558,7 +558,8 @@ def protocolos():
     try:
         for r in tsdb.consulta(base % (b, "seq") + " |> count()"):
             res.setdefault(r["protocolo"], {})["msg_min"] = round(float(r["_value"]) / 60, 2)
-        for r in tsdb.consulta(base % (b, "lat_ms") + " |> mean()"):
+        # el reloj del ESP32 en Wokwi corre mas lento que el real: su "latencia" es deriva del simulador, no de la red
+        for r in tsdb.consulta(base.replace('r._field=="%s")', 'r._field=="%s" and r.dispositivo!="esp32-wokwi")') % (b, "lat_ms") + " |> mean()"):
             res.setdefault(r["protocolo"], {})["latencia_ms"] = round(float(r["_value"]), 1)
         for fn in ("mean", "count"):
             for r in tsdb.consulta('from(bucket:"%s") |> range(start:-30d) |> filter(fn:(r)=> r._measurement=="ack" and r._field=="rtt_ms")'
