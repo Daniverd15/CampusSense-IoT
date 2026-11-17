@@ -1,0 +1,17 @@
+Demostración del lazo cerrado (scripts/demo_regla.py) · 2026-11-17 · contra la URL pública
+calibrar → regla R1 → comando CoAP al gemelo HVAC → ACK → reset → R1 devuelve a auto
+
+Paso 1 · calibrar el CO₂ del aula-101 (offset +1200 ppm) por MQTT
+  → aula-101 calibrar {'variable': 'co2', 'offset': 1200.0, 'ganancia': 1} · cmd_id 4dd5899b1eac
+Paso 2 · esperar a que R1 actúe sola (promedio 5 min > 1000 ppm)
+  ✔ R1 a los 70 s: twin-hvac-aula101 → ventilación por CoAP, ACK en 36 ms (modo=ventilacion)
+Paso 3 · quitar la calibración (reset de fábrica del aula-101)
+  → aula-101 reset · cmd_id e6603ae2eea1
+Paso 4 · esperar a que R1 devuelva el HVAC a auto (promedio < 750 ppm)
+  ✔ HVAC de vuelta en auto a los 301 s
+
+Registro de comandos de la API (/api/comandos), del más reciente al más antiguo:
+twin-hvac-aula101  modo {'valor': 'auto'}         regla R1  ACK ok  modo=auto                         24 ms
+aula-101           reset {}                       manual    ACK ok  configuracion de fabrica           2 ms
+twin-hvac-aula101  modo {'valor': 'ventilacion'}  regla R1  ACK ok  modo=ventilacion                  36 ms
+aula-101           calibrar co2 offset=1200       manual    ACK ok  co2: offset=1200.0 ganancia=1.0    1 ms

@@ -80,7 +80,7 @@ for titulo, col, items in filas:
     y += 10
 
 # ------------------------------------------------------------------ zona Azure
-zona(600, 120, 1775, 1000, "2–5. NUBE AZURE · VM Ubuntu 22.04 Standard_B2als_v2 (2 vCPU, 4 GB) · northcentralus · Docker Compose (12 contenedores)", AZURE)
+zona(600, 120, 1775, 1000, "2–5. NUBE AZURE · VM Ubuntu 22.04 Standard_B2als_v2 (2 vCPU, 4 GB) · northcentralus · Docker Compose (11 contenedores)", AZURE)
 d.text((620, 152), "https://campussense-unab.northcentralus.cloudapp.azure.com  ·  NSG: 443/80 (Caddy, TLS Let's Encrypt) y 1883 (MQTT con usuario y ACL)", font=f(17, True), fill=AZURE)
 
 # capa 2: brokers / endpoints

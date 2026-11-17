@@ -34,8 +34,29 @@ actúa solo (por ejemplo: CO₂ alto en el aula → el gemelo HVAC pasa a ventil
   | MQTT por Internet (ESP32 en Wokwi) | 10/10 | 81 ms |
 
 - **Evidencias:** capturas de Grafana y del front en [`evidencias/`](evidencias); gráficas del análisis en `informe/graficas/`.
-- **Scripts:** `scripts/resumen_toma.py` (resumen de la toma), `scripts/exportar_toma.py` (exporta la ventana),
-  `scripts/prueba_retroceso.py` (benchmark de comandos), `informe/graficas.py` (figuras del informe).
+- **Scripts:**
+  - `scripts/prueba_humo.py`: funcionamiento y seguridad desde cualquier PC.
+  - `scripts/demo_regla.py`: lazo calibrar → R1 → HVAC en vivo.
+  - `scripts/prueba_retroceso.py`: benchmark de comandos.
+  - `scripts/resumen_toma.py` y `scripts/exportar_toma.py`: resumen y exportación de la toma.
+  - `informe/graficas.py`: figuras del informe.
+
+## Requisito del enunciado ↔ dónde se cumple
+
+| Requisito | Cómo se cumple | Dónde verlo |
+|---|---|---|
+| Elementos IoT: sensores, datos, protocolos, plataforma y visualización | 12 dispositivos con 77 variables y sus rangos; 5 protocolos; InfluxDB + API; Grafana y front | Informe §3.1–§3.4, [registro.py](plataforma/registro.py) |
+| ≥ 10 dispositivos de tipo Real, Digital Twin, API y DataSet, cada uno con su protocolo | 4 reales (uno es el ESP32 en Wokwi), 3 gemelos, 3 APIs (Azure Maps y GPS del bus de la UNAB), 2 datasets UCI | Tabla de abajo, informe §3.1 |
+| Retroceso: modificar, apagar, calibrar | `encender`, `apagar`, `intervalo`, `calibrar`, `reset` y comandos propios, por el mismo protocolo y con ACK; 95 de 95 en la prueba | [prueba_retroceso.json](mediciones/prueba_retroceso.json), informe §5 |
+| 4 a 6 días de datos | 6 días (8–14 nov), 150 035 mensajes, sin huecos | [mediciones/export](mediciones/export), Grafana con rango fijo |
+| Nube con URL e infraestructura propias | VM en Azure, DNS propio, HTTPS de Let's Encrypt; 31 de 31 pruebas desde Internet | [prueba_humo_17nov.txt](mediciones/prueba_humo_17nov.txt), informe §3.3 |
+| Arquitectura de referencia propia | 5 capas, decisiones justificadas y diagramas de secuencia | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md), informe §2 |
+| Procesamiento: promedio, máximo y mínimo, alertas, reglas, ajuste de tiempo | `aggregateWindow` en Flux; reglas R1–R7 en la API; 6 alertas de Grafana; marcas de tiempo UTC con zona de Bogotá | Informe §3.4, [api.py](plataforma/api.py) |
+| Análisis de las gráficas con IA | Un análisis por dispositivo más uno transversal, con cada cifra verificada contra los datos | Informe §4 y anexo C |
+| Referencias | APA 7 | Informe §7 |
+| GitHub, URL y sustentación | Este repositorio, la URL de arriba y el guion | [SUSTENTACION.md](SUSTENTACION.md) |
+
+**Más documentación:** [arquitectura y decisiones](docs/ARQUITECTURA.md) · [bitácora](BITACORA.md) · [índice de evidencias](evidencias/README.md) · [guion de sustentación](SUSTENTACION.md) · [diseño del front](DESIGN.md)
 
 ## Dispositivos
 
@@ -94,7 +115,7 @@ La URL principal abre un panel propio (HTML + JS sin framework, Chart.js y Leafl
 ## Estructura
 
 ```
-docker-compose.yml        12 contenedores: brokers, InfluxDB, ingestor, API, 4 de dispositivos, Grafana, Caddy
+docker-compose.yml        11 contenedores: brokers, InfluxDB, ingestor, API, 4 de dispositivos, Grafana, Caddy
 plataforma/               código Python (una imagen): registro, biblioteca común, dispositivos, ingestor, API, front
   registro.py             los 12 dispositivos, variables, rangos y comandos
   comun.py                clase base de dispositivo + enlaces MQTT/AMQP/STOMP/CoAP/HTTP + bus de datos
@@ -119,7 +140,7 @@ evidencias/, mediciones/  capturas y salidas reales
 git clone https://github.com/Daniverd15/CampusSense-IoT.git && cd CampusSense-IoT
 cp .env.example .env          # cambiar TODAS las claves y poner el dominio
 docker compose up -d --build
-docker compose ps             # 12 contenedores Up / healthy
+docker compose ps             # 11 contenedores Up (3 healthy)
 ```
 
 ESP32 en Wokwi: `MQTT_USER=esp32 MQTT_PASS=<clave> WOKWI_CLI_TOKEN=<token> ./wokwi/build_y_simular.sh 600`.

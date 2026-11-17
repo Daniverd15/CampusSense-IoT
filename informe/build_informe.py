@@ -299,6 +299,18 @@ P("**Flujo de retroceso.** Un comando sale del front o del motor de reglas hacia
 P("**Relación con la arquitectura del docente.** Se respetan sus bloques —*real device python.py*, *api*, *digital twin*, *dataset* → *broker messaging* → "
   "*front / back / database* → *Grafana* y *analysis*— y se amplían con varios brokers, un bus interno, un motor de reglas, retroceso por protocolo y despliegue con HTTPS.")
 
+P("**Decisiones de diseño.** Cada pieza se eligió frente a una alternativa concreta:", tam=9.6)
+T([["Decisión", "Alternativa", "Por qué"],
+   ["Una VM con Docker Compose", "AKS (Lab 6)", "AKS consumió rápido los créditos de estudiante y chocó con las cuotas; para 12 dispositivos alcanza una VM de 4 GB (≈ US$0,9/día) y se replica con un comando"],
+   ["InfluxDB 2.7", "PostgreSQL / TimescaleDB", "Base de series de tiempo nativa: `aggregateWindow` da promedio, máximo y mínimo por ventana, y Grafana la consulta directo"],
+   ["Mosquitto + RabbitMQ", "Un solo broker", "Cada protocolo con su broker de referencia; RabbitMQ cubre AMQP y STOMP con el mismo intercambio"],
+   ["Bus interno retenido", "Que cada consumidor lea cada broker", "Los 5 protocolos se normalizan en un formato; un cliente nuevo recibe el último valor al conectarse"],
+   ["ACK con `cmd_id`", "Comandos sin confirmación", "El retroceso se puede demostrar y medir, y la interfaz muestra si el equipo obedeció"],
+   ["HTTP con comandos en la respuesta", "Que la plataforma llame al equipo", "Un equipo HTTP real suele estar detrás de NAT; a cambio, la latencia es el intervalo de envío"],
+   ["Reglas en la API y alertas en Grafana", "Solo Grafana", "Las reglas que actúan necesitan enviar comandos con memoria e histéresis; Grafana queda como capa visual y avisa por webhook"],
+   ["Respaldo Open-Meteo", "Depender solo de Azure Maps", "Cuando la cuenta de Azure Maps se bloqueó (15-nov), los dispositivos de clima y aire siguieron midiendo sin intervención"]],
+  [3.9, 3.6, 9.5], tam=8.2)
+
 # ====================================================================== 3. TECNOLOGIAS
 H("3. Tecnologías seleccionadas")
 H("3.1 Sensores y dispositivos", 2)
@@ -537,6 +549,22 @@ T([["Prueba", "Resultado"],
    ["Disponibilidad", "11 contenedores sin reinicios durante la toma; 0 huecos en los 6 días"]],
   [4.6, 12.4], tam=8.4)
 F(os.path.join(EV, "23-front-retroceso.jpg"), ANCHO * 0.9, "Front · retroceso: camino y tiempo de ida y vuelta por protocolo e historial de comandos con su ACK.")
+P("**Lazo cerrado de extremo a extremo (17-nov).** `scripts/demo_regla.py` une calibración, regla y retroceso en una sola prueba contra la URL pública. Primero se "
+  "calibra el CO₂ del aula-101 con un offset de +1200 ppm por MQTT (ACK en 1 ms). A los 70 s el promedio de 5 min superó 1000 ppm, y la regla R1 mandó sola el "
+  "gemelo HVAC a ventilación por CoAP (ACK en 36 ms). Después se hizo un *reset* de fábrica, y a los 301 s el promedio bajó de 750 ppm: R1 devolvió el HVAC a auto (ACK en 24 ms). "
+  "El registro completo está en `mediciones/demo_regla_17nov.txt`, y es la demostración que se hará en vivo en la sustentación.", tam=9.6)
+P("**Pruebas de funcionamiento y seguridad desde Internet.** `scripts/prueba_humo.py` se ejecuta desde cualquier PC y comprueba lo que debe funcionar y lo que "
+  "debe estar bloqueado. Resultado del 17-nov: **31 de 31 correctas** (`mediciones/prueba_humo_17nov.txt`).", tam=9.6)
+T([["Grupo", "Qué se comprobó", "Resultado"],
+   ["Nube", "DNS, certificado TLS de Let's Encrypt, redirección de HTTP a HTTPS", "OK (308 a HTTPS)"],
+   ["Servicios", "Front, `/api/salud`, `/docs`, Grafana, 12 dispositivos registrados y 11 en línea, resumen de la ventana", "OK"],
+   ["Puertos", "Abiertos: 443 y 1883. Cerrados: 5672, 61613, 15672, 8086, 3000, 8000 y 8081", "9 de 9"],
+   ["MQTT", "Anónimo y clave falsa rechazados (CONNACK 5). El ESP32 suscrito a `campus/#` no recibe nada, no ve los comandos de otro equipo y no puede suplantar al aula-101", "7 de 7"],
+   ["API y Grafana", "Comando sin clave o con clave falsa, ingesta y webhook sin token: 401. Grafana anónimo no puede crear tableros: 403", "5 de 5"],
+   ["Retroceso", "Comando MQTT real al aula-101 desde Internet", "ACK en 2 ms; ida y vuelta completa en 1,2 s"]],
+  [2.6, 10.6, 3.8], tam=8.3)
+P("Mosquitto 2 concede cualquier suscripción y aplica la ACL al entregar cada mensaje. Por eso la prueba de la ACL no mira la respuesta a la suscripción: "
+  "cuenta los mensajes que realmente llegan, y los compara con un usuario de la plataforma que en el mismo lapso sí recibe 35.", tam=9.0, cursiva=True)
 
 # ====================================================================== 6. CONCLUSIONES
 H("6. Resultados, conclusiones y trabajo futuro")
@@ -603,6 +631,7 @@ for t in ["`git clone %s && cd CampusSense-IoT && cp .env.example .env` (cambiar
           "Validar los paneles de Grafana: `python3 grafana/verificar_paneles.py` (en la VM). Resumen de la toma: `python3 scripts/resumen_toma.py`.",
           "Exportar la ventana: `python3 scripts/exportar_toma.py` y regenerar las gráficas de este informe con `python informe/graficas.py`.",
           "Prueba de retroceso: `CONTROL_KEY=… python scripts/prueba_retroceso.py`. ESP32: `./wokwi/build_y_simular.sh 600`.",
+          "Funcionamiento y seguridad: `python scripts/prueba_humo.py`. Lazo en vivo: `CONTROL_KEY=… python scripts/demo_regla.py`.",
           "Evidencias: `evidencias/` (capturas de Grafana y del front), `mediciones/` (exportes, logs del ESP32, prueba de retroceso), `informe/graficas/`."]:
     V(t, tam=9.3)
 

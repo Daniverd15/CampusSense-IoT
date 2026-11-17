@@ -1,0 +1,73 @@
+# Bitácora del proyecto
+
+Registro de lo hecho, las decisiones y los problemas encontrados, con su solución. Las horas son de Bogotá (UTC−5).
+El detalle técnico de cada decisión está en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md#4-decisiones-de-diseño).
+
+---
+
+## 2026-11-08 · Construcción y arranque de la toma
+
+**Hecho**
+- Lectura del enunciado y de los insumos del docente: el diagrama `ArquitecturaIoTCapstoneFinal.excalidraw` y la colección Postman (Azure Maps y GPS del bus de la UNAB).
+- Diseño del escenario: el campus El Jardín, con un aula, un laboratorio, un bloque, el tanque, el panel solar, el clima y el bus.
+- 12 dispositivos de 4 tipos sobre una clase base común (`plataforma/comun.py`), con un enlace por protocolo y el retroceso por el mismo canal.
+- Pila Docker de 11 contenedores en la VM del Lab 4/5, redimensionada a `Standard_B2als_v2` (4 GB). El stack del Lab 5 se bajó con sus volúmenes intactos.
+- Motor de reglas R1–R7 y 5 tableros de Grafana generados como código (`grafana/gen_dashboards.py`).
+- **Arranque de la toma oficial a las 23:19.**
+
+**Decisiones**
+- VM con Compose en lugar de AKS: el Lab 6 mostró lo rápido que AKS consume los créditos de estudiante.
+- InfluxDB como base de series de tiempo; RabbitMQ para cubrir AMQP y STOMP con un solo broker.
+
+## 2026-11-09 · Publicación, front y ESP32
+
+**Hecho**
+- NSG con 80/443 y 1883; etiqueta DNS `campussense-unab`; HTTPS de Let's Encrypt con Caddy. Repositorio público `Daniverd15/CampusSense-IoT`.
+- Primera sesión del ESP32 en Wokwi por Internet: 6 comandos con ACK y RTT de 105 a 140 ms (`mediciones/esp32_wokwi_sesion1.txt`).
+- Front de centro de control: flujo en vivo por SSE, panel por dispositivo, mapa del bus y consola de retroceso.
+- Rediseño con la identidad UNAB y el método Impeccable (`PRODUCT.md`, `DESIGN.md`).
+
+**Problemas y soluciones**
+- RabbitMQ cerraba la conexión de publicación entre envíos, porque se perdían los heartbeats. Se agregó un hilo que atiende `process_data_events`.
+- Se perdían mensajes AMQP y HTTP cuando el receptor se reiniciaba. Se agregó guardar y reenviar: una cola de hasta 2000 mensajes.
+- El reloj del ESP32 simulado deriva unos 10 s, así que su latencia aparente no es real. Se excluye del promedio de latencia MQTT.
+- Grafana no muestra bien sus tableros por el túnel SSH, porque su `root_url` es el dominio. Los paneles se validan con `grafana/verificar_paneles.py` dentro de la VM.
+
+## 2026-11-12 · Cuarto día de datos
+
+- Se cumplió el mínimo del enunciado (4 días) a las 23:19. Se revisaron los huecos con `scripts/resumen_toma.py` y no había ninguno.
+
+## 2026-11-14 · Cierre de la ventana oficial
+
+- A las 23:19 se completaron los 6 días. **150 035 mensajes de 12 dispositivos, sin huecos.**
+- La plataforma se dejó tomando datos para la demostración en vivo. El informe y Grafana usan el rango fijo de la toma oficial.
+
+## 2026-11-15 · Incidente: Azure Maps bloqueado
+
+- Hacia las 16:00, Azure Maps empezó a responder `401 AccountLocked` con la clave del docente. Las otras claves de la colección Postman dan `InvalidKey`.
+- La ventana oficial no se vio afectada, porque ya había terminado.
+
+## 2026-11-17 · Cierre del proyecto
+
+**Hecho**
+- **Respaldo automático Open-Meteo** para `api-clima-unab` y `api-aire-unab`: el estado del dispositivo marca la fuente (`fuente: 1`) y cada 6 h se reintenta Azure Maps.
+- Exportación de la ventana oficial a `mediciones/export/`: series, estadísticas, reglas, alertas y perfil horario.
+- Prueba formal de retroceso en los 6 caminos (`mediciones/prueba_retroceso.json`). Solo se mandaron comandos que no cambian nada, como volver a poner el intervalo de fábrica.
+- Segunda sesión del ESP32: 10 de 10 ACK, con un RTT mediano de 81 ms.
+- Informe de 32 páginas generado como código (`informe/build_informe.py`). Antes de cerrarlo se comprobó cada cifra del análisis contra los datos.
+- Prueba de humo y seguridad desde Internet (`scripts/prueba_humo.py`): **31 de 31 correctas** (`mediciones/prueba_humo_17nov.txt`).
+- Documentación: arquitectura con decisiones, bitácora, evidencias y guion de sustentación.
+
+**Problemas y soluciones**
+- Carrera del ACK: 1 de 95 comandos AMQP quedó sin ACK, porque el ACK llegaba antes de que la API registrara el comando. Ahora se registra antes de enviar, y en la repetición fueron 95 de 95.
+- Las anotaciones de comandos automáticos tapaban las gráficas de Grafana. Se separaron en tres capas: manuales (visible), reglas y alertas (ocultas por defecto).
+- El mapa de Grafana pedía una clave de CARTO, así que se cambió a OpenStreetMap. Además se agregó `aggregateWindow` para no dibujar decenas de miles de puntos.
+- Las series binarias (extractor, ocupación, bomba) ocupaban todo el panel. Se fijó su escala entre 0 y 4.
+- Un despliegue de la API con la constante de la ventana debajo de su primer uso causó un `SyntaxError`, y la API estuvo caída unos 2 minutos. Guardar y reenviar evitó perder datos. Desde entonces se valida antes de desplegar.
+- El front mostraba "8,53 días" y solo los últimos 80 comandos. Ahora muestra "6 días · completada" y el total real desde el 8-nov.
+- Las primeras pruebas de ACL dieron un falso fallo: Mosquitto 2 concede la suscripción y aplica la ACL al entregar cada mensaje. La prueba se cambió para contar los mensajes que realmente llegan.
+
+## Pendiente
+
+- [ ] Sustentación el 20-nov con la demostración en vivo (ver [SUSTENTACION.md](SUSTENTACION.md)).
+- [ ] Desasignar la VM después de la sustentación (`az vm deallocate -g rg-lab4iot -n vm-lab4-iot`).

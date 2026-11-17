@@ -1,0 +1,46 @@
+Prueba de humo CampusSense · campussense-unab.northcentralus.cloudapp.azure.com · 2026-11-17 17:15:39 UTC
+
+== Nube y HTTPS
+OK    DNS resuelve                                               172.183.133.93
+OK    Certificado TLS válido                                     Let's Encrypt, vence 2027-02-07
+OK    HTTP (80) redirige a HTTPS                                 código 308
+
+== Servicios
+OK    Front (centro de control)                                  HTTP 200
+OK    API /api/salud                                             11/12 dispositivos en línea
+OK    Documentación OpenAPI /docs                                HTTP 200
+OK    Grafana /grafana/api/health                                HTTP 200
+OK    12 dispositivos registrados, 11 permanentes en línea       fuera: ninguno (el ESP32 solo en sesiones Wokwi)
+OK    Resumen de la ventana oficial (aula-101)                   {'dispositivo': 'aula-101', 'horas': 24.0, 'ventana': ['2026-11-09T04:
+
+== Puertos: solo 22, 80, 443 y 1883 hacia Internet
+OK    Puerto 443 (HTTPS) abierto                                 
+OK    Puerto 1883 (MQTT) abierto                                 
+OK    Puerto 5672 (AMQP RabbitMQ) cerrado                        
+OK    Puerto 61613 (STOMP) cerrado                               
+OK    Puerto 15672 (consola RabbitMQ) cerrado                    
+OK    Puerto 8086 (InfluxDB) cerrado                             
+OK    Puerto 3000 (Grafana directo) cerrado                      
+OK    Puerto 8000 (API directa) cerrado                          
+OK    Puerto 8081 (Caddy local) cerrado                          
+
+== Seguridad MQTT
+OK    Conexión anónima rechazada                                 CONNACK 5
+OK    Usuario/clave falsos rechazados                            CONNACK 5
+OK    Usuario del ESP32 aceptado                                 CONNACK 0
+OK    Control: un usuario de la plataforma SÍ ve campus/#        35 mensajes en 6 s
+OK    ACL: el ESP32 suscrito a campus/# no recibe nada           0 mensajes en 6 s
+OK    ACL: el ESP32 no recibe los comandos de otro equipo        0 mensajes
+OK    ACL: el ESP32 no puede suplantar al aula-101               0 mensajes falsos entregados
+
+== Seguridad de la API
+OK    Comando SIN clave rechazado                                HTTP 401
+OK    Comando con clave falsa rechazado                          HTTP 401
+OK    Ingesta HTTP sin token rechazada                           HTTP 401
+OK    Webhook de alertas sin token rechazado                     HTTP 401
+OK    Grafana anónimo no puede crear tableros                    HTTP 403
+
+== Retroceso de extremo a extremo
+OK    Comando MQTT a aula-101 con ACK                            RTT 2 ms, ida y vuelta por Internet 1208 ms
+
+Resultado: 31 de 31 pruebas correctas (60.4 s)
