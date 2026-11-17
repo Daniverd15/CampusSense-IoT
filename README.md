@@ -16,6 +16,27 @@ actúa solo (por ejemplo: CO₂ alto en el aula → el gemelo HVAC pasa a ventil
 
 ![Arquitectura de referencia](evidencias/00-arquitectura.png)
 
+## Entregables
+
+- **Informe:** [`Informe_CampusSense_UNAB.pdf`](Informe_CampusSense_UNAB.pdf) (32 páginas, 27 figuras; fuente en `informe/build_informe.py`).
+- **Toma oficial de datos:** 6 días, del 8-nov 23:19 al 14-nov 23:19 (hora de Bogotá) · 150 035 mensajes de 12 dispositivos, sin huecos.
+  Exportada en [`mediciones/export/`](mediciones/export) (series CSV, estadísticas, reglas, alertas, perfil horario).
+  La plataforma sigue tomando datos en vivo; en el front y en `/api/resumen/<id>?ventana=oficial` se puede ver solo la ventana oficial.
+- **Prueba de retroceso** ([`mediciones/prueba_retroceso.json`](mediciones/prueba_retroceso.json)), comando → ACK:
+
+  | Protocolo | ACK | RTT mediano |
+  |---|---|---|
+  | MQTT | 20/20 | 1 ms |
+  | AMQP | 20/20 | 7,5 ms |
+  | STOMP | 20/20 | 6 ms |
+  | CoAP | 20/20 | 4 ms |
+  | HTTP (el comando viaja en la respuesta del siguiente envío) | 5/5 | 27,9 s |
+  | MQTT por Internet (ESP32 en Wokwi) | 10/10 | 81 ms |
+
+- **Evidencias:** capturas de Grafana y del front en [`evidencias/`](evidencias); gráficas del análisis en `informe/graficas/`.
+- **Scripts:** `scripts/resumen_toma.py` (resumen de la toma), `scripts/exportar_toma.py` (exporta la ventana),
+  `scripts/prueba_retroceso.py` (benchmark de comandos), `informe/graficas.py` (figuras del informe).
+
 ## Dispositivos
 
 | ID | Tipo | Protocolo | Variables (rango físico aceptado) | Intervalo |
@@ -27,8 +48,8 @@ actúa solo (por ejemplo: CO₂ alto en el aula → el gemelo HVAC pasa a ventil
 | `twin-hvac-aula101` | Gemelo digital | CoAP | temp. modelo, temp. suministro, setpoint 16–30 °C, potencia 0–10 kW, modo, error del modelo | 30 s |
 | `twin-tanque-agua` | Gemelo digital | CoAP | nivel 0–100 %, volumen 0–20 m³, caudal entrada/salida L/min, bomba 0/1, presión bar | 30 s |
 | `twin-panel-solar` | Gemelo digital | HTTP | irradiancia 0–1400 W/m², potencia 0–15 kW, temp. panel, energía del día, inversor | 30 s |
-| `api-clima-unab` | API (Azure Maps) | MQTT | temperatura, sensación, humedad, punto de rocío, presión, viento, ráfaga, UV, nubosidad, visibilidad, lluvia | 10 min |
-| `api-aire-unab` | API (Azure Maps) | MQTT | índice global, PM2.5, PM10, NO₂, O₃, CO, SO₂ | 15 min |
+| `api-clima-unab` | API (Azure Maps, respaldo Open-Meteo) | MQTT | temperatura, sensación, humedad, punto de rocío, presión, viento, ráfaga, UV, nubosidad, visibilidad, lluvia | 10 min |
+| `api-aire-unab` | API (Azure Maps, respaldo Open-Meteo) | MQTT | índice global, PM2.5, PM10, NO₂, O₃, CO, SO₂ | 15 min |
 | `api-bus-ruta1` | API (GPS Rutas UNAB) | MQTT | lat, lon, velocidad, encendido, batería externa e interna, distancia al campus | 60 s |
 | `ds-ocupacion-uci` | Dataset (UCI 357) | STOMP | temperatura, humedad, luz, CO₂, humedad ratio, ocupación | 60 s |
 | `ds-aire-uci` | Dataset (UCI 360) | AMQP | CO, NOx, NO₂, benceno, temperatura, humedad, humedad absoluta | 5 min |
@@ -79,7 +100,7 @@ plataforma/               código Python (una imagen): registro, biblioteca com�
   comun.py                clase base de dispositivo + enlaces MQTT/AMQP/STOMP/CoAP/HTTP + bus de datos
   dispositivos_reales.py  aula-101, lab-quimica, medidor-bloque-a
   gemelos.py              HVAC, tanque, planta solar
-  apis.py                 Azure Maps (clima, aire) y GPS del bus
+  apis.py                 Azure Maps (clima, aire) con respaldo Open-Meteo, y GPS del bus
   datasets.py             repetición de los datasets UCI
   ingestor.py, tsdb.py    ingesta de 4 protocolos y escritura en InfluxDB
   api.py, static/         back-end FastAPI, motor de reglas y front web
@@ -110,6 +131,7 @@ ESP32 en Wokwi: `MQTT_USER=esp32 MQTT_PASS=<clave> WOKWI_CLI_TOKEN=<token> ./wok
 - **MQTT:** QoS 1 con sesión persistente y última voluntad; el ingestor solo confirma después de escribir en InfluxDB.
 - **Estado persistente:** cada dispositivo guarda en un volumen su encendido, intervalo, calibración y estado propio; un reinicio no borra lo que se le ordenó.
 - **Historial:** comandos, ACK y alertas viven en InfluxDB y la API los recupera al arrancar.
+- **Fuente de respaldo:** si Azure Maps falla (el 15-nov la cuenta del docente empezó a responder `401 AccountLocked`), los dispositivos de clima y aire pasan solos a Open-Meteo, lo marcan en su estado (`fuente: 1`) y cada 6 h vuelven a probar Azure Maps.
 
 ## Seguridad
 
@@ -121,5 +143,6 @@ ESP32 en Wokwi: `MQTT_USER=esp32 MQTT_PASS=<clave> WOKWI_CLI_TOKEN=<token> ./wok
 ## Créditos de datos
 
 - Azure Maps Weather (Microsoft) — clave entregada por el docente.
+- Open-Meteo (Weather Forecast y Air Quality API, CC BY 4.0) — fuente de respaldo desde el 15-nov.
 - Candanedo, L. & Feldheim, V. (2016). *Occupancy Detection* [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5X01N
 - Vito, S. (2008). *Air Quality* [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C59K5F

@@ -157,32 +157,38 @@ def enviar_comando(dev, accion, params, origen="manual"):
            "ts": int(time.time() * 1000)}
     cuerpo = json.dumps(cmd)
     respuesta = None
-    if proto == "mqtt":
-        info = bus.publish("campus/cmd/" + dev, cuerpo, qos=1)
-        info.wait_for_publish(5)
-        via = "MQTT PUBLISH campus/cmd/%s QoS1" % dev
-    elif proto == "amqp":
-        _enviar_amqp(dev, cuerpo)
-        via = "AMQP basic.publish exchange campus.cmd rk %s (confirmado)" % dev
-    elif proto == "stomp":
-        _enviar_stomp(dev, cuerpo)
-        via = "STOMP SEND /exchange/campus.cmd/%s" % dev
-    elif proto == "coap":
-        codigo, respuesta = _enviar_coap(dev, cuerpo)
-        via = "CoAP POST CON %s -> %s" % (COAP_CMD[dev], codigo)
-    else:
-        with lock:
-            pendientes_http[dev].append(cmd)
-        via = "HTTP: en cola, viaja en la respuesta al proximo POST del dispositivo"
-    registro = dict(cmd, dispositivo=dev, protocolo=proto, via=via, ack=None)
+    # se registra ANTES de enviar: el ACK puede volver en pocos ms y debe encontrar su comando en el historial
+    registro = dict(cmd, dispositivo=dev, protocolo=proto, via="", ack=None)
+    with lock:
+        historial_cmd.appendleft(registro)
+    try:
+        if proto == "mqtt":
+            info = bus.publish("campus/cmd/" + dev, cuerpo, qos=1)
+            info.wait_for_publish(5)
+            via = "MQTT PUBLISH campus/cmd/%s QoS1" % dev
+        elif proto == "amqp":
+            _enviar_amqp(dev, cuerpo)
+            via = "AMQP basic.publish exchange campus.cmd rk %s (confirmado)" % dev
+        elif proto == "stomp":
+            _enviar_stomp(dev, cuerpo)
+            via = "STOMP SEND /exchange/campus.cmd/%s" % dev
+        elif proto == "coap":
+            codigo, respuesta = _enviar_coap(dev, cuerpo)
+            via = "CoAP POST CON %s -> %s" % (COAP_CMD[dev], codigo)
+        else:
+            with lock:
+                pendientes_http[dev].append(cmd)
+            via = "HTTP: en cola, viaja en la respuesta al proximo POST del dispositivo"
+    except Exception as e:
+        registro["via"] = "no se pudo enviar: %s" % type(e).__name__
+        raise HTTPException(503, "no se pudo enviar el comando por %s: %s" % (proto, type(e).__name__))
+    registro["via"] = via
     if respuesta:
         try:
             a = json.loads(respuesta).get("ack", {})
             registro["ack"] = {"ok": a.get("ok"), "detalle": a.get("detalle"), "rtt_ms": int(time.time() * 1000) - cmd["ts"]}
         except ValueError:
             pass
-    with lock:
-        historial_cmd.appendleft(registro)
     emitir(dict(registro, t="cmd"))
     if registro["ack"]:                       # CoAP: el ACK llega en la misma respuesta
         emitir({"t": "ack", "id": dev, "proto": proto, "ts": int(time.time() * 1000), "cmd_id": cmd["cmd_id"],
@@ -421,23 +427,43 @@ async def webhook_grafana(request: Request, token: str = ""):
     return {"ok": True}
 
 
+VENTANA_OFICIAL = ("2026-11-09T04:19:00Z", "2026-11-15T04:19:00Z")   # 6 dias de toma: 8-nov 23:19 a 14-nov 23:19 (Bogota)
+
+
 @app.get("/api/resumen/{dev}")
-def resumen(dev: str, horas: float = 24):
+def resumen(dev: str, horas: float = 24, ventana: str = ""):
+    """Promedio, minimo, maximo y muestras por variable. ventana=oficial usa el rango fijo de la toma de 6 dias."""
     if dev not in DISPOSITIVOS:
         raise HTTPException(404, "dispositivo desconocido")
     horas = max(0.1, min(horas, 24 * 14))
-    base = 'from(bucket:"%s") |> range(start:-%dm) |> filter(fn:(r)=> r._measurement=="telemetria" and r.dispositivo=="%s" and r._field!="seq" and r._field!="lat_ms")' % (
-        tsdb.BUCKET, int(horas * 60), dev)
+    rango = "start: %s, stop: %s" % VENTANA_OFICIAL if ventana == "oficial" else "start: -%dm" % int(horas * 60)
+    base = 'from(bucket:"%s") |> range(%s) |> filter(fn:(r)=> r._measurement=="telemetria" and r.dispositivo=="%s" and r._field!="seq" and r._field!="lat_ms")' % (
+        tsdb.BUCKET, rango, dev)
     out = {}
     for fn in ("mean", "min", "max", "count"):
         for r in tsdb.consulta(base + " |> group(columns:[\"_field\"]) |> %s()" % fn):
             out.setdefault(r["_field"], {})[fn] = round(float(r["_value"]), 3)
-    return {"dispositivo": dev, "horas": horas, "variables": out}
+    return {"dispositivo": dev, "horas": horas, "ventana": VENTANA_OFICIAL if ventana == "oficial" else None, "variables": out}
+
+
+_cache_total = {"t": 0, "n": None}
+
+
+def comandos_total():
+    """Comandos registrados en InfluxDB desde el inicio de la toma (cache 60 s)."""
+    if _cache_total["n"] is None or time.time() - _cache_total["t"] > 60:
+        try:
+            filas = tsdb.consulta('from(bucket:"%s") |> range(start: %s) |> filter(fn:(r)=> r._measurement=="comandos" and r._field=="cmd_id")'
+                                  ' |> group() |> count()' % (tsdb.BUCKET, VENTANA_OFICIAL[0]))
+            _cache_total.update(t=time.time(), n=int(float(filas[0]["_value"])) if filas else 0)
+        except Exception as e:
+            log("API", "comandos_total: %s" % e)
+    return _cache_total["n"]
 
 
 @app.get("/api/salud")
 def salud():
-    return {"ok": True, "inicio": INICIO, "uptime_s": round(time.time() - INICIO), "dispositivos": len(DISPOSITIVOS),
+    return {"comandos_total": comandos_total(), "ventana_oficial": VENTANA_OFICIAL, "ok": True, "inicio": INICIO, "uptime_s": round(time.time() - INICIO), "dispositivos": len(DISPOSITIVOS),
             "en_linea": sum(1 for d in DISPOSITIVOS if _vista(d)["en_linea"]), "alertas_activas": len(activas),
             "ingesta_http": tsdb.cuenta.get("http", 0)}
 

@@ -25,7 +25,7 @@
  "annotations": {
   "list": [
    {
-    "name": "Comandos (retroceso)",
+    "name": "Comandos manuales",
     "datasource": {
      "type": "influxdb",
      "uid": "influx-campus"
@@ -34,7 +34,20 @@
     "iconColor": "#F59C00",
     "target": {
      "refId": "Anno",
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\" and r.origen == \"manual\")\n  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + \": \" + r.accion + \" \" + r._value + \" (\" + r.origen + \")\"}))"
+    }
+   },
+   {
+    "name": "Acciones de reglas",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "influx-campus"
+    },
+    "enable": false,
+    "iconColor": "#3B1561",
+    "target": {
+     "refId": "Auto",
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"comandos\" and r._field == \"params\" and r.origen != \"manual\")\n  |> map(fn: (r) => ({_time: r._time, text: r.origen + \" -> \" + r.dispositivo + \": \" + r.accion + \" \" + r._value}))"
     }
    },
    {
@@ -43,7 +56,7 @@
      "type": "influxdb",
      "uid": "influx-campus"
     },
-    "enable": true,
+    "enable": false,
     "iconColor": "#C2253A",
     "target": {
      "refId": "Alr",
@@ -1284,7 +1297,7 @@
       "type": "influxdb",
       "uid": "influx-campus"
      },
-     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-bus-ruta1\" and (r._field == \"lat\" or r._field == \"lon\" or r._field == \"velocidad\"))\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lon\", \"velocidad\"])\n  |> group()"
+     "query": "from(bucket: \"campus\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"telemetria\" and r.dispositivo == \"api-bus-ruta1\" and (r._field == \"lat\" or r._field == \"lon\" or r._field == \"velocidad\"))\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"_time\", \"lat\", \"lon\", \"velocidad\"])\n  |> group()"
     }
    ],
    "fieldConfig": {
@@ -1308,8 +1321,9 @@
      "mouseWheelZoom": false
     },
     "basemap": {
-     "type": "default",
-     "name": "Mapa"
+     "type": "osm-standard",
+     "name": "OpenStreetMap",
+     "config": {}
     },
     "layers": [
      {

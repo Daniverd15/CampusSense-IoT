@@ -63,7 +63,7 @@ DISPOSITIVOS = {
     "api-clima-unab": {
         "nombre": "Clima actual UNAB (Azure Maps Weather)", "tipo": "api", "protocolo": "mqtt", "intervalo": 600,
         "ubicacion": "7.1170, -73.1053 (campus El Jardín)",
-        "hardware": "Azure Maps Weather - Current Conditions v1.1 (HTTPS -> MQTT)",
+        "hardware": "Azure Maps Weather - Current Conditions v1.1 (HTTPS -> MQTT); respaldo automático: Open-Meteo",
         "variables": {"temperatura": ("°C", -10, 50), "sensacion": ("°C", -20, 60), "humedad": ("%", 0, 100),
                       "punto_rocio": ("°C", -20, 40), "presion": ("hPa", 900, 1100), "viento": ("km/h", 0, 200),
                       "rafaga": ("km/h", 0, 250), "uv": ("índice", 0, 16), "nubosidad": ("%", 0, 100),
@@ -72,7 +72,7 @@ DISPOSITIVOS = {
     "api-aire-unab": {
         "nombre": "Calidad del aire UNAB (Azure Maps Air Quality)", "tipo": "api", "protocolo": "mqtt", "intervalo": 900,
         "ubicacion": "7.1170, -73.1053",
-        "hardware": "Azure Maps Weather - Air Quality v1.1 (HTTPS -> MQTT)",
+        "hardware": "Azure Maps Weather - Air Quality v1.1 (HTTPS -> MQTT); respaldo automático: Open-Meteo Air Quality",
         "variables": {"indice_global": ("índice", 0, 500), "pm25": ("µg/m³", 0, 1000), "pm10": ("µg/m³", 0, 1000),
                       "no2": ("µg/m³", 0, 2000), "o3": ("µg/m³", 0, 2000), "co": ("µg/m³", 0, 50000),
                       "so2": ("µg/m³", 0, 2000)},

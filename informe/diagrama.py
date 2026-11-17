@@ -129,7 +129,7 @@ flecha([(1600, 402), (1600, 438)], (90, 60, 160))
 
 # servicios externos
 zona(600, 975, 1775, 135, "SERVICIOS EXTERNOS", GRIS)
-for i, (t, l) in enumerate([("Azure Maps Weather", "currentConditions + airQuality v1.1 (HTTPS)"), ("GPS Rutas UNAB", "gpsmobile.co REST (HTTP Basic)"),
+for i, (t, l) in enumerate([("Azure Maps Weather", "clima + aire v1.1 · respaldo: Open-Meteo"), ("GPS Rutas UNAB", "gpsmobile.co REST (HTTP Basic)"),
                             ("UCI ML Repository", "Occupancy Detection · Air Quality"), ("Wokwi", "simulador ESP32 (Wi-Fi Wokwi-GUEST)"), ("GitHub", "código, manifiestos, evidencias")]):
     caja(625 + i * 348, 1000, 330, 90, t, [l], GRIS, tam=15, ttam=17, grosor=2)
 

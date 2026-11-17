@@ -40,7 +40,9 @@ const FAMILIAS = {
   api: ["API", "Datos reales de servicios externos: Azure Maps (clima y calidad del aire en el campus) y el GPS del bus de Rutas UNAB."],
   dataset: ["Dataset", "Mediciones reales de datasets públicos de UCI, repetidas como si fueran sensores en vivo y alineadas a la hora del día."],
 };
-const ORIGEN = (id, d) => id === "esp32-wokwi" ? "firmware real · Wokwi" : d.tipo === "real" ? "emulado en Python" : d.tipo === "twin" ? "modelo en la nube" : d.tipo === "api" ? "dato externo real" : "dataset UCI repetido";
+const RESPALDO = { "api-clima-unab": "Open-Meteo", "api-aire-unab": "Open-Meteo" };
+const ORIGEN = (id, d) => id === "esp32-wokwi" ? "firmware real · Wokwi" : d.tipo === "real" ? "emulado en Python" : d.tipo === "twin" ? "modelo en la nube"
+  : d.tipo === "api" ? (d.estado?.fuente === 1 ? `respaldo · ${RESPALDO[id]}` : "dato externo real") : "dataset UCI repetido";
 const PRINCIPAL = {
   "aula-101": "co2", "lab-quimica": "pm25", "medidor-bloque-a": "potencia", "esp32-wokwi": "temperatura",
   "twin-hvac-aula101": "temp_modelo", "twin-tanque-agua": "nivel", "twin-panel-solar": "potencia", "api-clima-unab": "temperatura",
@@ -59,7 +61,7 @@ const INICIO_TOMA = Date.parse("2026-11-09T04:19:00Z");   // primer dato guardad
 const E = {
   disp: {}, orden: [], filtro: "todos", buscar: "", spark: {}, consolaFiltro: "todo", pausa: false, ventana: [],
   abierto: null, charts: [], rango: 24, pendientes: {}, desde: 0, protocolos: {}, alertas: { activas: [], historial: [] },
-  reglas: [], comandos: [], anaDisp: "aula-101", anaHoras: 24,
+  reglas: [], comandos: [], anaDisp: "aula-101", anaHoras: "oficial",
 };
 const acksVistos = new Set();
 const acksRecientes = new Map();   // el ACK puede llegar por SSE antes que la respuesta del POST
@@ -259,13 +261,14 @@ function indicadores() {
   $("#k-alertas").textContent = act.length;
   $("#k-alertas").style.color = act.length ? "var(--mal)" : "";
   $("#k-alertas-nota").textContent = act.length ? act.map((a) => a.regla).join(" · ") : "ninguna regla disparada";
-  $("#k-cmd").textContent = E.comandos.length;
+  $("#k-cmd").textContent = E.comandosTotal ?? E.comandos.length;
   const u = E.comandos[0];
   $("#k-cmd-nota").textContent = u ? `último: ${u.accion} → ${u.dispositivo}` : "ninguno aún";
   const dias = (Date.now() - INICIO_TOMA) / 86400000;
-  $("#toma-dias").textContent = `${fmt(dias, 2)} días`;
+  const completa = dias >= 6;
+  $("#toma-dias").textContent = completa ? "6 días · completada" : `${fmt(dias, 2)} días`;
   $("#toma-relleno").style.width = `${Math.min(100, (dias / 6) * 100)}%`;
-  $("#toma-desde").textContent = `desde ${fecha(INICIO_TOMA)}`;
+  $("#toma-desde").textContent = completa ? `${fecha(INICIO_TOMA)} → ${fecha(INICIO_TOMA + 6 * 86400000)}` : `desde ${fecha(INICIO_TOMA)}`;
 }
 function dibujarSpark() {
   const cv = $("#k-spark"), w = cv.clientWidth, h = 30;
@@ -353,7 +356,7 @@ async function cargarAnalisis() {
   const tb = $("#t-ana tbody");
   tb.innerHTML = `<tr><td colspan="6"><span class="vacio">Calculando en InfluxDB…</span></td></tr>`;
   let r;
-  try { r = await api(`/api/resumen/${id}?horas=${E.anaHoras}`); } catch (e) { tb.innerHTML = `<tr><td colspan="6"><span class="vacio">No se pudo consultar.</span></td></tr>`; return; }
+  try { r = await api(E.anaHoras === "oficial" ? `/api/resumen/${id}?ventana=oficial` : `/api/resumen/${id}?horas=${E.anaHoras}`); } catch (e) { tb.innerHTML = `<tr><td colspan="6"><span class="vacio">No se pudo consultar.</span></td></tr>`; return; }
   if (E.anaDisp !== id) return;
   const vars = Object.keys(d.variables).filter((k) => r.variables[k]);
   tb.innerHTML = vars.map((k) => {
@@ -366,7 +369,7 @@ async function cargarAnalisis() {
   }).join("") || `<tr><td colspan="6"><span class="vacio">Sin datos en este rango.</span></td></tr>`;
   const total = vars.reduce((s, k) => s + (r.variables[k].count || 0), 0);
   $("#ana-lado").innerHTML = `<h4 style="color:${color(d)}">${esc(d.nombre)}</h4><p>${esc(ORIGEN(id, d))} · ${esc(d.protocolo.toUpperCase())} · ${esc(d.ubicacion)}</p>
-    <dl><dt>Rango</dt><dd>${E.anaHoras >= 336 ? "toda la toma" : E.anaHoras >= 24 ? `${E.anaHoras / 24} d` : `${E.anaHoras} h`}</dd><dt>Valores leídos</dt><dd>${fmt(total, 0)}</dd>
+    <dl><dt>Rango</dt><dd>${E.anaHoras === "oficial" ? "8 nov 23:19 – 14 nov 23:19" : E.anaHoras >= 336 ? "últimos 14 d" : E.anaHoras >= 24 ? `últimos ${E.anaHoras / 24} d` : `última ${E.anaHoras} h`}</dd><dt>Valores leídos</dt><dd>${fmt(total, 0)}</dd>
     <dt>Intervalo actual</dt><dd>${esc(d.estado?.intervalo_s ?? d.intervalo_fabrica)} s</dd><dt>Último dato</dt><dd>${hace(d.ts)}</dd></dl>
     <p>La barra muestra dónde cayó el periodo dentro del rango físico que acepta el ingestor; la marca es el promedio.</p>
     <a class="btn chico" href="/grafana/d/campus-resumen" target="_blank" rel="noopener">Ver en Grafana ${icono("ext", 13)}</a>`;
@@ -374,7 +377,7 @@ async function cargarAnalisis() {
 $("#a-disp").addEventListener("change", (e) => { E.anaDisp = e.target.value; cargarAnalisis(); });
 $("#a-rango").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
-  E.anaHoras = Number(b.dataset.h); $$("#a-rango button").forEach((x) => x.classList.toggle("activo", x === b)); cargarAnalisis();
+  E.anaHoras = b.dataset.h === "oficial" ? "oficial" : Number(b.dataset.h); $$("#a-rango button").forEach((x) => x.classList.toggle("activo", x === b)); cargarAnalisis();
 });
 
 // ================================================================== mapa
@@ -463,7 +466,7 @@ async function cargarAlertas() {
   indicadores();
 }
 async function cargarComandos() {
-  try { E.comandos = await api("/api/comandos?n=80"); } catch (e) { return; }
+  try { E.comandos = await api("/api/comandos?n=80"); E.comandosTotal = (await api("/api/salud")).comandos_total; } catch (e) { return; }
   $("#t-cmd tbody").innerHTML = E.comandos.map((c) => `<tr><td class="mono">${fecha(c.ts)}</td><td><b>${esc(c.dispositivo)}</b><br><small>${esc(c.protocolo.toUpperCase())}</small></td>
     <td><b>${esc(c.accion)}</b><br><small class="mono">${esc(JSON.stringify(c.params))}</small></td>
     <td><span class="origen-cmd ${String(c.origen).startsWith("regla") ? "regla" : ""}">${esc(c.origen)}</span></td><td><small>${esc(c.via)}</small></td>

@@ -1,0 +1,47 @@
+{
+ "amqp": {
+  "mensajes": 19005,
+  "latencia_mean_ms": 3.45,
+  "latencia_median_ms": 1.0,
+  "rtt_mean_ms": 19.5,
+  "rtt_min_ms": 8.0,
+  "rtt_max_ms": 31.0,
+  "rtt_count_ms": 2.0
+ },
+ "coap": {
+  "mensajes": 34553,
+  "latencia_mean_ms": 2.1,
+  "latencia_median_ms": 2.0,
+  "rtt_mean_ms": 13.9,
+  "rtt_min_ms": 5.0,
+  "rtt_max_ms": 47.0,
+  "rtt_count_ms": 114.0
+ },
+ "http": {
+  "mensajes": 17272,
+  "latencia_mean_ms": 3.67,
+  "latencia_median_ms": 2.0,
+  "rtt_mean_ms": 18610.5,
+  "rtt_min_ms": 9272.0,
+  "rtt_max_ms": 27949.0,
+  "rtt_count_ms": 2.0
+ },
+ "mqtt": {
+  "mensajes": 70563,
+  "latencia_mean_ms": 0.59,
+  "latencia_median_ms": 1.0,
+  "rtt_mean_ms": 67.3,
+  "rtt_min_ms": 1.0,
+  "rtt_max_ms": 140.0,
+  "rtt_count_ms": 11.0
+ },
+ "stomp": {
+  "mensajes": 8642,
+  "latencia_mean_ms": 1.18,
+  "latencia_median_ms": 1.0,
+  "rtt_mean_ms": 15.3,
+  "rtt_min_ms": 6.0,
+  "rtt_max_ms": 24.0,
+  "rtt_count_ms": 3.0
+ }
+}

@@ -1,0 +1,72 @@
+{
+ "fecha_utc": "2026-11-17T16:38:50Z",
+ "resultados": {
+  "mqtt": {
+   "dispositivo": "aula-101",
+   "comandos": 20,
+   "ack_ok": 20,
+   "sin_ack": 0,
+   "rtt_min_ms": 1,
+   "rtt_mediana_ms": 1.0,
+   "rtt_media_ms": 1.5,
+   "rtt_max_ms": 3,
+   "rtt_p95_ms": 2
+  },
+  "amqp": {
+   "dispositivo": "medidor-bloque-a",
+   "comandos": 20,
+   "ack_ok": 20,
+   "sin_ack": 0,
+   "rtt_min_ms": 7,
+   "rtt_mediana_ms": 7.5,
+   "rtt_media_ms": 8.2,
+   "rtt_max_ms": 22,
+   "rtt_p95_ms": 8
+  },
+  "stomp": {
+   "dispositivo": "ds-ocupacion-uci",
+   "comandos": 20,
+   "ack_ok": 20,
+   "sin_ack": 0,
+   "rtt_min_ms": 5,
+   "rtt_mediana_ms": 6.0,
+   "rtt_media_ms": 6.4,
+   "rtt_max_ms": 17,
+   "rtt_p95_ms": 7
+  },
+  "coap": {
+   "dispositivo": "twin-tanque-agua",
+   "comandos": 20,
+   "ack_ok": 20,
+   "sin_ack": 0,
+   "rtt_min_ms": 4,
+   "rtt_mediana_ms": 4.0,
+   "rtt_media_ms": 5,
+   "rtt_max_ms": 19,
+   "rtt_p95_ms": 5
+  },
+  "http": {
+   "dispositivo": "twin-panel-solar",
+   "comandos": 5,
+   "ack_ok": 5,
+   "sin_ack": 0,
+   "rtt_min_ms": 18532,
+   "rtt_mediana_ms": 27876,
+   "rtt_media_ms": 26090.2,
+   "rtt_max_ms": 28271,
+   "rtt_p95_ms": 27993
+  },
+  "mqtt-internet": {
+   "dispositivo": "esp32-wokwi",
+   "comandos": 10,
+   "ack_ok": 10,
+   "sin_ack": 0,
+   "rtt_min_ms": 72,
+   "rtt_mediana_ms": 81.0,
+   "rtt_media_ms": 80.3,
+   "rtt_max_ms": 88,
+   "rtt_p95_ms": 88
+  }
+ },
+ "nota": "mqtt-internet (ESP32 en Wokwi) medido en la sesion del 17-nov a las 16:30 UTC; el resto repetido tras corregir la carrera del ACK en la API"
+}

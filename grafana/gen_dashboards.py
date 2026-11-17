@@ -118,11 +118,16 @@ class Tablero:
                 "panels": self.paneles}
 
 
-ANOT_CMD = {"name": "Comandos (retroceso)", "datasource": DS, "enable": True, "iconColor": "#F59C00",
+ANOT_CMD = {"name": "Comandos manuales", "datasource": DS, "enable": True, "iconColor": "#F59C00",
             "target": {"refId": "Anno", "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
-                       '  |> filter(fn: (r) => r._measurement == "comandos" and r._field == "params")\n'
+                       '  |> filter(fn: (r) => r._measurement == "comandos" and r._field == "params" and r.origen == "manual")\n'
                        '  |> map(fn: (r) => ({_time: r._time, text: r.dispositivo + ": " + r.accion + " " + r._value + " (" + r.origen + ")"}))'}}
-ANOT_ALERTA = {"name": "Alertas", "datasource": DS, "enable": True, "iconColor": "#C2253A",
+# las acciones automaticas (R1 manda decenas al dia) y las alertas son capas opcionales: en 6 dias saturarian las graficas
+ANOT_AUTO = {"name": "Acciones de reglas", "datasource": DS, "enable": False, "iconColor": "#3B1561",
+             "target": {"refId": "Auto", "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
+                        '  |> filter(fn: (r) => r._measurement == "comandos" and r._field == "params" and r.origen != "manual")\n'
+                        '  |> map(fn: (r) => ({_time: r._time, text: r.origen + " -> " + r.dispositivo + ": " + r.accion + " " + r._value}))'}}
+ANOT_ALERTA = {"name": "Alertas", "datasource": DS, "enable": False, "iconColor": "#C2253A",
                "target": {"refId": "Alr", "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
                           '  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "mensaje")\n'
                           '  |> map(fn: (r) => ({_time: r._time, text: r.regla + " [" + r.dispositivo + "]: " + r._value}))'}}
@@ -134,7 +139,7 @@ t = Tablero("campus-resumen", "CampusSense · 1. Resumen de la plataforma",
             "## CampusSense UNAB — IoT a la medida\n12 dispositivos (**4 reales · 3 gemelos digitales · 3 API · 2 dataset**) por **MQTT, AMQP, STOMP, CoAP y HTTP** "
             "→ Mosquitto / RabbitMQ → ingestor y API → **InfluxDB** → Grafana. El retroceso (comandos) usa el mismo protocolo de cada dispositivo. Hora de Bogotá.",
             ["campussense"])
-t.anotaciones = [ANOT_CMD, ANOT_ALERTA]
+t.anotaciones = [ANOT_CMD, ANOT_AUTO, ANOT_ALERTA]
 t.stat("Dispositivos con datos (últimos 10 min)", ['from(bucket: "campus")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == "telemetria" and r._field == "seq")\n  |> group(columns: ["dispositivo"])\n  |> last()\n  |> group()\n  |> count()\n  |> set(key: "serie", value: "en línea")\n  |> group(columns: ["serie"])'],
        "none", 6, 4, "Dispositivos distintos que enviaron telemetría en los últimos 10 minutos (12 posibles; el ESP32 de Wokwi solo en sesiones).", 0,
        pasos=[(None, "#C2253A"), (9, "#F59C00"), (11, "#6D2CA0")])
@@ -172,7 +177,7 @@ tableros.append(("01-resumen.json", t))
 t = Tablero("campus-ambiente", "CampusSense · 2. Ambiente interior",
             "**Aula 101** (real, MQTT) · **Lab. Química** (real, MQTT) · **ESP32 Wokwi** (real, MQTT por Internet) · **Oficina UCI** (dataset, STOMP). "
             "Umbrales: CO₂ 1000 ppm (regla R1 → HVAC a ventilación), PM2.5 35 µg/m³ (R4).", ["campussense"])
-t.anotaciones = [ANOT_CMD, ANOT_ALERTA]
+t.anotaciones = [ANOT_CMD, ANOT_AUTO, ANOT_ALERTA]
 t.fila("Aula 101 — nodo ambiental (aula-101)")
 t.resumen("aula-101", "co2", "CO₂ Aula 101", "ppm", 8, 4, 0)
 t.resumen("aula-101", "temperatura", "Temperatura Aula 101", "celsius", 8, 4, 1)
@@ -193,7 +198,7 @@ t.resumen("lab-quimica", "voc", "VOC Lab. Química", "ppb", 12, 4, 0)
 t.ts("PM2.5 y VOC (con extractor)", [serie("lab-quimica", "pm25", "PM2.5 (µg/m³)"), serie("lab-quimica", "voc", "VOC (ppb)"),
                                      serie("lab-quimica", "extractor", "extractor (0/1)", "max")], "", 16, 8, umbrales=[(35, "red")])
 t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "VOC (ppb)"}, "properties": [{"id": "custom.axisPlacement", "value": "right"}]},
-                                             {"matcher": {"id": "byName", "options": "extractor (0/1)"}, "properties": [{"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 20}, {"id": "custom.axisPlacement", "value": "hidden"}]}]
+                                             {"matcher": {"id": "byName", "options": "extractor (0/1)"}, "properties": [{"id": "min", "value": 0}, {"id": "max", "value": 4}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 18}, {"id": "custom.axisPlacement", "value": "hidden"}]}]
 t.ts("Temperatura y humedad del laboratorio", [serie("lab-quimica", "temperatura", "temperatura (°C)"), serie("lab-quimica", "humedad", "humedad (%)")], "", 8, 8)
 t.fila("ESP32 de demostración (Wokwi) y oficina del dataset UCI")
 t.ts("ESP32 Wokwi: DHT22 y LDR", [serie("esp32-wokwi", "temperatura", "temperatura (°C)"), serie("esp32-wokwi", "humedad", "humedad (%)"),
@@ -202,14 +207,14 @@ t.ts("ESP32 Wokwi: DHT22 y LDR", [serie("esp32-wokwi", "temperatura", "temperatu
 t.ts("Oficina UCI: CO₂, luz y ocupación", [serie("ds-ocupacion-uci", "co2", "CO₂ (ppm)"), serie("ds-ocupacion-uci", "luz", "luz (lux)"),
                                            serie("ds-ocupacion-uci", "ocupacion", "ocupación (0/1)", "max")], "", 12, 8,
      "Dataset UCI Occupancy Detection repetido a 1 fila/min, alineado al día de la semana y la hora actuales.")
-t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "ocupación (0/1)"}, "properties": [{"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 25}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "ocupación (0/1)"}, "properties": [{"id": "min", "value": 0}, {"id": "max", "value": 4}, {"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 25}]}]
 tableros.append(("02-ambiente.json", t))
 
 # =============================================================================== 03 energia y agua
 t = Tablero("campus-energia", "CampusSense · 3. Energía, HVAC y agua",
             "**Medidor Bloque A** (real, AMQP) · **Planta solar 12 kWp** (gemelo, HTTP) · **HVAC Aula 101** (gemelo, CoAP) · **Tanque 20 m³** (gemelo, CoAP). "
             "La potencia de red = carga − solar. Regla R2: demanda > 30 kW → HVAC a eco.", ["campussense"])
-t.anotaciones = [ANOT_CMD, ANOT_ALERTA]
+t.anotaciones = [ANOT_CMD, ANOT_AUTO, ANOT_ALERTA]
 t.fila("Energía")
 t.resumen("medidor-bloque-a", "potencia", "Potencia de red Bloque A", "kwatt", 8, 4, 2)
 t.resumen("twin-panel-solar", "potencia", "Potencia solar", "kwatt", 8, 4, 2)
@@ -230,14 +235,14 @@ t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "opti
 t.fila("Gemelo digital tanque de agua")
 t.resumen("twin-tanque-agua", "nivel", "Nivel del tanque", "percent", 8, 4, 1)
 t.ts("Nivel y bomba", [serie("twin-tanque-agua", "nivel", "nivel (%)"), serie("twin-tanque-agua", "bomba", "bomba (0/1)", "max")], "", 16, 8, umbrales=[(20, "red")], minimo=0)
-t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "bomba (0/1)"}, "properties": [{"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 20}]}]
+t.paneles[-1]["fieldConfig"]["overrides"] += [{"matcher": {"id": "byName", "options": "bomba (0/1)"}, "properties": [{"id": "min", "value": 0}, {"id": "max", "value": 4}, {"id": "custom.axisPlacement", "value": "hidden"}, {"id": "custom.drawStyle", "value": "bars"}, {"id": "custom.fillOpacity", "value": 18}]}]
 t.ts("Caudales de entrada y salida", [serie("twin-tanque-agua", "caudal_entrada", "entrada (bomba)"), serie("twin-tanque-agua", "caudal_salida", "salida (consumo)")], "", 24, 7)
 tableros.append(("03-energia-agua.json", t))
 
 # =============================================================================== 04 exterior y movilidad
 t = Tablero("campus-exterior", "CampusSense · 4. Exterior y movilidad",
             "**Clima y calidad del aire** de Azure Maps (API, HTTPS → MQTT) · **Estación urbana UCI** (dataset, AMQP) · **Bus UNAB Ruta 1** (API GPS, HTTP → MQTT).", ["campussense"])
-t.anotaciones = [ANOT_CMD, ANOT_ALERTA]
+t.anotaciones = [ANOT_CMD, ANOT_AUTO, ANOT_ALERTA]
 t.fila("Clima en el campus (api-clima-unab)")
 t.resumen("api-clima-unab", "temperatura", "Temperatura exterior", "celsius", 8, 4, 1)
 t.resumen("api-clima-unab", "humedad", "Humedad exterior", "percent", 8, 4, 0)
@@ -260,11 +265,12 @@ t.fila("Bus UNAB Ruta 1 (api-bus-ruta1)")
 t.add({"type": "geomap", "title": "Recorrido del bus (últimas posiciones)", "datasource": DS,
        "targets": [{"refId": "A", "datasource": DS, "query": 'from(bucket: "campus")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n'
                     '  |> filter(fn: (r) => r._measurement == "telemetria" and r.dispositivo == "api-bus-ruta1" and (r._field == "lat" or r._field == "lon" or r._field == "velocidad"))\n'
+                    '  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n'
                     '  |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")\n  |> keep(columns: ["_time", "lat", "lon", "velocidad"])\n  |> group()'}],
        "fieldConfig": {"defaults": {"color": {"mode": "continuous-GrYlRd"}, "unit": "velocitykmh"}, "overrides": []},
        "options": {"view": {"id": "coords", "lat": 7.115, "lon": -73.11, "zoom": 13},
                    "controls": {"showZoom": True, "mouseWheelZoom": False},
-                   "basemap": {"type": "default", "name": "Mapa"},
+                   "basemap": {"type": "osm-standard", "name": "OpenStreetMap", "config": {}},
                    "layers": [{"type": "markers", "name": "posiciones", "location": {"mode": "coords", "latitude": "lat", "longitude": "lon"},
                                "config": {"size": {"fixed": 5}, "color": {"field": "velocidad", "fixed": "dark-green"}, "showLegend": True}}]}}, 12, 10)
 t.ts("Velocidad y distancia al campus", [serie("api-bus-ruta1", "velocidad", "velocidad (km/h)", "max"), serie("api-bus-ruta1", "distancia_campus", "distancia al campus (km)")], "", 12, 10,
@@ -276,7 +282,7 @@ tableros.append(("04-exterior.json", t))
 t = Tablero("campus-retroceso", "CampusSense · 5. Retroceso, reglas y protocolos",
             "**Retroceso:** cada comando (encender, apagar, intervalo, calibrar, setpoint, modo…) se ve como anotación naranja y cambia el estado que reporta el dispositivo. "
             "**Reglas:** el motor de la API actúa solo (R1–R7). **Protocolos:** latencia de subida y tiempo de ida y vuelta del ACK de cada comando.", ["campussense"])
-t.anotaciones = [ANOT_CMD, ANOT_ALERTA]
+t.anotaciones = [ANOT_CMD, ANOT_AUTO, ANOT_ALERTA]
 
 
 def estado_q(campo, nombre_por_disp=True):
