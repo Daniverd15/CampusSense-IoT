@@ -285,20 +285,29 @@ function dibujarSpark() {
 }
 
 // ================================================================== consola y ticker
+// Cada grupo guarda sus últimos eventos: al cambiar de filtro se ve lo que ya pasó, no una lista vacía.
+const consolaBuf = { dato: [], cmd: [], alerta: [] };
+const filaConsola = (r) => `<li><time>${hora(r.t)}</time><span class="tag ${r.tipo}">${{ cmd: "comando", dato: "dato", ack: "ack", alerta: "alerta", conexion: "conexión" }[r.tipo]}</span><span class="txt">${r.texto}</span></li>`;
+function pintarConsola() {
+  const f = E.consolaFiltro;
+  const filas = (f === "todo" ? [...consolaBuf.dato, ...consolaBuf.cmd, ...consolaBuf.alerta] : consolaBuf[f] || [])
+    .sort((a, b) => b.t - a.t).slice(0, 160);
+  $("#consola").innerHTML = filas.length ? filas.map(filaConsola).join("")
+    : `<li class="vacio"><span class="txt">Aún no llega nada de este tipo desde que abriste la página.</span></li>`;
+}
 function consola(tipo, texto) {
-  if (E.pausa) return;
   const grupo = tipo === "ack" ? "cmd" : tipo === "conexion" ? "alerta" : tipo;
-  if (E.consolaFiltro !== "todo" && E.consolaFiltro !== grupo) return;
-  const li = document.createElement("li");
-  li.className = "nuevo";
-  li.innerHTML = `<time>${hora(Date.now())}</time><span class="tag ${tipo}">${{ cmd: "comando", dato: "dato", ack: "ack", alerta: "alerta", conexion: "conexión" }[tipo]}</span><span class="txt">${texto}</span>`;
-  const ol = $("#consola"); ol.prepend(li);
+  const r = { t: Date.now(), tipo, texto };
+  const buf = consolaBuf[grupo]; buf.unshift(r); if (buf.length > 160) buf.pop();
+  if (E.pausa || (E.consolaFiltro !== "todo" && E.consolaFiltro !== grupo)) return;
+  const ol = $("#consola"); ol.querySelector(".vacio")?.remove();
+  ol.insertAdjacentHTML("afterbegin", filaConsola(r)); ol.firstElementChild.className = "nuevo";
   while (ol.children.length > 160) ol.lastChild.remove();
 }
 $("#c-filtros").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
-  if (b.id === "pausa") { E.pausa = !E.pausa; b.textContent = E.pausa ? "seguir" : "pausa"; b.classList.toggle("activo", E.pausa); return; }
-  E.consolaFiltro = b.dataset.c; $$("#c-filtros button[data-c]").forEach((x) => x.classList.toggle("activo", x === b)); $("#consola").innerHTML = "";
+  if (b.id === "pausa") { E.pausa = !E.pausa; b.textContent = E.pausa ? "seguir" : "pausa"; b.classList.toggle("activo", E.pausa); if (!E.pausa) pintarConsola(); return; }
+  E.consolaFiltro = b.dataset.c; $$("#c-filtros button[data-c]").forEach((x) => x.classList.toggle("activo", x === b)); pintarConsola();
 });
 const resumen = (d, v, n = 3) => Object.entries(v || {}).slice(0, n).map(([k, x]) => `${esc(k)}=${valor(d, k, x)}`).join(" ");
 function ticker(d, ev) {
