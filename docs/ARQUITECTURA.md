@@ -41,6 +41,7 @@ flowchart LR
   API -- consultas Flux --> DB
   GF -- Flux --> DB
   GF -- webhook alertas --> API
+  GF -- correo SMTP --> BR[Brevo<br/>correo al equipo]
   CD --> API
   CD --> GF
   U[Navegador<br/>centro de control] -- HTTPS + SSE --> CD
@@ -53,7 +54,7 @@ flowchart LR
 | Ingesta | `ingestor` (un adaptador por protocolo) | Valida el JSON, lo escribe en InfluxDB y lo republica normalizado en `campus/datos/<id>` (retenido) |
 | Datos | InfluxDB 2.7 | Series de tiempo: `tele`, `estado`, `comandos`, `acks`, `alertas` |
 | Aplicación | API FastAPI | Registro, comandos con ACK, motor de reglas R1-R7, resúmenes (prom/máx/mín), SSE en vivo |
-| Visualización | Grafana 11.6 + front propio | Tableros con rango fijo de la toma; centro de control en tiempo real |
+| Visualización | Grafana 11.6 + front propio | Tableros con rango fijo de la toma; centro de control en tiempo real; alertas por correo vía Brevo SMTP |
 | Borde | Caddy 2.8 | HTTPS automático, `/` → API y front, `/grafana` → Grafana |
 
 ## 2. Subida de un dato (ejemplo: Aula 101 por MQTT)
@@ -115,7 +116,7 @@ Cada protocolo baja por su propio canal:
 | ACK de vuelta con `cmd_id` | Comandos "dispara y olvida" | El retroceso se puede demostrar y medir (RTT por protocolo) y la interfaz muestra si el equipo obedeció |
 | HTTP con comandos en la respuesta | Que la plataforma llame al dispositivo | Un equipo HTTP real suele estar detrás de NAT; aprovechar su propio envío evita abrir puertos en el campo (a cambio, la latencia es el intervalo de envío) |
 | Gemelos CoAP como servidores | CoAP solo de subida | CoAP es petición/respuesta: el gemelo expone `/cmd` y responde el ACK en la misma transacción confirmable |
-| Reglas en la API **y** alertas en Grafana | Solo Grafana | Las reglas que actúan (R1, R2) necesitan mandar comandos con memoria e histéresis; Grafana Alerting queda como segunda capa visual y avisa a la API por webhook |
+| Reglas en la API **y** alertas en Grafana | Solo Grafana | Las reglas que actúan (R1, R2) necesitan mandar comandos con memoria e histéresis; Grafana Alerting queda como segunda capa visual y avisa a la API por webhook y al equipo por correo (Brevo SMTP) |
 | Caddy | Nginx + certbot | HTTPS automático y renovación sin tareas programadas, con pocas líneas de configuración |
 | ESP32 en Wokwi | Hardware físico | El enunciado permite simular; el firmware es C++ real (PlatformIO) y se conecta por Internet al mismo broker, con usuario propio y ACL |
 | Respaldo Open-Meteo | Depender solo de Azure Maps | El 15-nov la cuenta de Azure Maps quedó bloqueada (`401 AccountLocked`); los dispositivos pasan solos a Open-Meteo y siguen reintentando la fuente principal cada 6 h |

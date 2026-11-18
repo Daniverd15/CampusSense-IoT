@@ -30,4 +30,5 @@ Las gráficas de Grafana usan el rango fijo de la toma oficial: del 8-nov 23:19 
 | `demo_regla_17nov.txt` | Lazo cerrado en vivo: calibrar → R1 → HVAC por CoAP → ACK → vuelta a auto |
 | `prueba_reinicio_17nov.txt` | Reinicio de la VM completa: todo vuelve solo (HTTPS 38 s, datos 47 s) con su estado |
 | `endurecimiento_17nov.txt` | Token de Grafana de solo lectura (403 al escribir) y token del webhook en cabecera |
+| `alertas_email_17nov.txt` | Alerta real de Grafana → webhook a la API + correo entregado a los 3 integrantes (Brevo) |
 | `esp32_wokwi_sesion1.txt`, `esp32_wokwi_sesion2_17nov.txt` | ESP32 en Wokwi conectado por Internet, con los comandos y su ACK |

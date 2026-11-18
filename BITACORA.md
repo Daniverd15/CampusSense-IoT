@@ -80,6 +80,13 @@ El detalle técnico de cada decisión está en [docs/ARQUITECTURA.md](docs/ARQUI
 - La primera versión de la prueba de reinicio daba «en línea a los 39 s» con los valores retenidos de antes. Se corrigió para medir el primer dato con marca de tiempo posterior al reinicio.
 - La prueba de permisos daba 401 en todo porque `cut -d= -f2` cortaba el `==` final del token. Se cambió por `cut -d= -f2-`.
 
+## 2026-11-17 (noche) · Alertas por correo
+
+- Se creó una cuenta gratuita de Brevo con una clave SMTP («campussense», vence en nov-2027). Daniel verificó su correo y su teléfono, y el remitente quedó verificado.
+- Las alertas de Grafana ahora tienen dos receptores en el mismo punto de contacto: el webhook a la API, como antes, y un correo a los tres integrantes. La clave y los destinatarios viven solo en el `.env`.
+- Prueba: el correo de prueba se entregó a los 3. Además se hizo una alerta real de CO₂ (calibrar +1200 ppm): Grafana la disparó a las 22:14, la API la recibió a las 22:15 y Brevo entregó el correo a los 3 el mismo minuto (`mediciones/alertas_email_17nov.txt`).
+- `scripts/demo_regla.py --con-correo` mantiene el CO₂ alto hasta que Grafana dispara, para que en la sustentación el correo llegue en vivo.
+
 ## Pendiente
 
 - [ ] Sustentación el 20-nov con la demostración en vivo (ver [SUSTENTACION.md](SUSTENTACION.md)).

@@ -51,7 +51,7 @@ actúa solo (por ejemplo: CO₂ alto en el aula → el gemelo HVAC pasa a ventil
 | 4 a 6 días de datos | 6 días (8–14 nov), 150 035 mensajes, sin huecos | [mediciones/export](mediciones/export), Grafana con rango fijo |
 | Nube con URL e infraestructura propias | VM en Azure, DNS propio, HTTPS de Let's Encrypt; 31 de 31 pruebas desde Internet | [prueba_humo_17nov.txt](mediciones/prueba_humo_17nov.txt), informe §3.3 |
 | Arquitectura de referencia propia | 5 capas, decisiones justificadas y diagramas de secuencia | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md), informe §2 |
-| Procesamiento: promedio, máximo y mínimo, alertas, reglas, ajuste de tiempo | `aggregateWindow` en Flux; reglas R1–R7 en la API; 6 alertas de Grafana; marcas de tiempo UTC con zona de Bogotá | Informe §3.4, [api.py](plataforma/api.py) |
+| Procesamiento: promedio, máximo y mínimo, alertas, reglas, ajuste de tiempo | `aggregateWindow` en Flux; reglas R1–R7 en la API; 6 alertas de Grafana que llegan a la API y por correo; marcas de tiempo UTC con zona de Bogotá | Informe §3.4, [api.py](plataforma/api.py) |
 | Análisis de las gráficas con IA | Un análisis por dispositivo más uno transversal, con cada cifra verificada contra los datos | Informe §4 y anexo C |
 | Referencias | APA 7 | Informe §7 |
 | GitHub, URL y sustentación | Este repositorio, la URL de arriba y el guion | [SUSTENTACION.md](SUSTENTACION.md) |
@@ -110,7 +110,7 @@ La URL principal abre un panel propio (HTML + JS sin framework, Chart.js y Leafl
 
 - **Ingestor:** valida el rango físico de cada variable, escribe en InfluxDB y republica en `campus/datos/<id>` (bus interno del que leen los gemelos y la API).
 - **Motor de reglas (API, cada 30 s):** R1 CO₂ > 1000 ppm → HVAC en ventilación · R2 demanda > 30 kW → HVAC en eco · R3 tanque < 20 % · R4 PM2.5 laboratorio > 35 µg/m³ · R5 calidad del aire exterior · R6 dispositivo sin datos · R7 velocidad del bus > 60 km/h.
-- **Grafana:** 5 dashboards (resumen, ambiente, energía y agua, exterior y movilidad, retroceso y reglas) con mínimo, promedio y máximo del rango elegido, y 6 reglas de Grafana Alerting que avisan a la API por webhook.
+- **Grafana:** 5 dashboards (resumen, ambiente, energía y agua, exterior y movilidad, retroceso y reglas) con mínimo, promedio y máximo del rango elegido, y 6 reglas de Grafana Alerting que avisan a la API por webhook **y por correo al equipo** (Brevo SMTP; [evidencia](mediciones/alertas_email_17nov.txt)).
 
 ## Estructura
 

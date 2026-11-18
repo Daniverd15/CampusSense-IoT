@@ -24,7 +24,8 @@
 4. Tener a mano:
    - la clave de control para el front;
    - el ESP32 listo con `./wokwi/build_y_simular.sh 600`;
-   - una terminal con `scripts/demo_regla.py`.
+   - una terminal con `scripts/demo_regla.py --con-correo`, lista para lanzarla en el minuto 0:00 (el correo de Grafana tarda unos 8 min);
+   - los celulares con el correo de la UNAB abierto (las alertas llegan de «CampusSense UNAB»; si alguna cae en spam, marcarla como «no es spam» antes).
 5. **Plan B (sin Internet o sin VM):**
    - el PDF del informe;
    - las capturas de `evidencias/`;
@@ -39,7 +40,7 @@
 | 2:30 | Tomás | Front, sección Dispositivos | Un dispositivo de cada tipo: real (aula-101 por MQTT), gemelo (HVAC por CoAP), API (clima por MQTT, con respaldo Open-Meteo) y dataset (ocupación UCI por STOMP). Variables y rangos según la tabla del informe §3.1. |
 | 4:00 | Tomás | Grafana, rango fijo del 8 al 14-nov | **6 días de datos, 150 035 mensajes, sin huecos.** El perfil diario del CO₂ con las clases, la marea semidiurna de la presión y la curva solar. Promedio, máximo y mínimo en cada panel. |
 | 5:30 | David | Front → Retroceso: un comando por protocolo | MQTT, AMQP, STOMP, CoAP y HTTP, cada uno por su propio canal, con ACK y RTT a la vista. Benchmark: MQTT 1 ms, CoAP 4, STOMP 6, AMQP 7,5; HTTP ~28 s porque el comando viaja en la respuesta del siguiente envío. |
-| 7:00 | David | **En vivo:** `python scripts/demo_regla.py` | Se calibra el sensor de CO₂ del aula (+1200 ppm) → en ~70 s la regla R1 manda solo el HVAC a ventilación por CoAP, con ACK → *reset* → R1 lo devuelve a auto. Calibrar, regla y retroceso en un solo lazo. |
+| 7:00 | David | **En vivo:** consola del front + celulares | David lanzó `python scripts/demo_regla.py --con-correo` en el minuto 0:00, sin que se note. Se calibró el CO₂ del aula a +1200 ppm; a los ~70 s la regla R1 mandó sola el HVAC a ventilación por CoAP, con ACK, y se muestra en la consola. Hacia el minuto 8 Grafana dispara «CO₂ alto»: llega a la API y **les llega el correo a los tres celulares** (mostrar uno). Luego el script hace el *reset* solo. Calibrar, regla, retroceso y alerta en un solo lazo. |
 | 8:30 | Daniel | ESP32 en Wokwi | Firmware C++ real conectado por Internet al broker, con usuario propio y ACL. Prender el LED desde el front: ACK en ~80 ms. |
 | 9:30 | Tomás | Informe §4 (análisis con IA) | Tres hallazgos: el gemelo acierta ±0,25 °C el 98,7 % del tiempo; el ozono sube hacia las 14 h por la fotoquímica; la PM2.5 subió hacia el final de la semana. La IA ayudó a leer las gráficas, y cada cifra se verificó contra los datos. |
 | 11:00 | David | `mediciones/prueba_humo_17nov.txt` | Seguridad: 31 de 31 pruebas, con los puertos internos cerrados, MQTT sin acceso anónimo, ACL del ESP32 y API con clave. Resiliencia: guardar y reenviar, y el respaldo de Azure Maps cuando se bloqueó la cuenta el 15-nov. |
@@ -63,6 +64,7 @@
   - HTTPS a los 38 s y los 11 dispositivos con datos nuevos a los 47 s.
   - Se conservan los intervalos, las calibraciones, el historial y la memoria de las reglas.
   - Evidencia: `mediciones/prueba_reinicio_17nov.txt`.
+- **¿Cómo se enteran de una alerta?** Grafana avisa por dos caminos: el webhook a la API (aparece en el front) y un correo a los tres por Brevo SMTP con STARTTLS. Se repite como máximo cada 4 h para no saturar (`mediciones/alertas_email_17nov.txt`).
 - **¿Grafana puede dañar los datos?** No: lee InfluxDB con un token de solo lectura, y escribir o borrar con él da 403 (`mediciones/endurecimiento_17nov.txt`).
 - **¿Cómo se ajusta el tiempo?**
   - Cada mensaje trae `ts` en milisegundos UTC y `seq`; InfluxDB guarda en UTC y Grafana muestra en hora de Bogotá.

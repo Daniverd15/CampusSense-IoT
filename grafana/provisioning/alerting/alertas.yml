@@ -13,6 +13,14 @@ contactPoints:
           authorization_scheme: Bearer
           authorization_credentials: $INGEST_TOKEN   # en cabecera: no queda en los logs de acceso
           httpMethod: POST
+      - uid: email-equipo
+        type: email                                 # Brevo SMTP (GF_SMTP_* en docker-compose.yml)
+        disableResolveMessage: false
+        settings:
+          addresses: $ALERT_TO
+          singleEmail: true
+          subject: "[CampusSense UNAB] {{ .Status | toUpper }} · {{ .CommonLabels.alertname }}"
+          message: "Plataforma: https://campussense-unab.northcentralus.cloudapp.azure.com · Grafana: https://campussense-unab.northcentralus.cloudapp.azure.com/grafana"
 
 policies:
   - orgId: 1

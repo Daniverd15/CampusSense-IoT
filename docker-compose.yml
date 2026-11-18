@@ -192,6 +192,15 @@ services:
       GF_NEWS_NEWS_FEED_ENABLED: "false"
       INFLUX_TOKEN: ${INFLUX_TOKEN_GRAFANA}        # solo lectura del bucket campus (scripts/crear_token_grafana.sh)
       INGEST_TOKEN: ${INGEST_TOKEN}
+      # correo de alertas por Brevo SMTP (si SMTP_KEY esta vacio, las alertas siguen yendo solo a la API)
+      GF_SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      GF_SMTP_HOST: smtp-relay.brevo.com:587
+      GF_SMTP_USER: ${SMTP_USER:-}
+      GF_SMTP_PASSWORD: ${SMTP_KEY:-}
+      GF_SMTP_FROM_ADDRESS: ${SMTP_FROM:-}
+      GF_SMTP_FROM_NAME: CampusSense UNAB
+      GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
+      ALERT_TO: ${ALERT_TO:-}
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/etc/grafana/dashboards:ro

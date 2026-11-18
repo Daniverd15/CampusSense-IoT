@@ -7,7 +7,9 @@
 3. Muestra el comando automático y su ACK por CoAP.
 4. Quita la calibración (reset): cuando el promedio baje de 750 ppm, R1 devuelve el HVAC a "auto".
 
-Uso:  CONTROL_KEY=... python scripts/demo_regla.py [offset]
+Uso:  CONTROL_KEY=... python scripts/demo_regla.py [offset] [--con-correo]
+      --con-correo: mantiene el CO₂ alto hasta que Grafana dispare "CO2 alto Aula 101" (unos 8 min),
+                    que llega a la API y por correo (Brevo) al equipo; luego hace el reset.
       (Ctrl+C en cualquier momento deja el aula en su configuración de fábrica)
 """
 import json
@@ -18,7 +20,8 @@ import urllib.request
 
 URL = os.environ.get("CAMPUS_URL", "https://campussense-unab.northcentralus.cloudapp.azure.com")
 CLAVE = os.environ["CONTROL_KEY"]
-OFFSET = float(sys.argv[1]) if len(sys.argv) > 1 else 1200.0
+NUMS = [a for a in sys.argv[1:] if not a.startswith("--")]
+OFFSET = float(NUMS[0]) if NUMS else 1200.0
 
 
 def llamar(ruta, cuerpo=None):
@@ -60,6 +63,17 @@ try:
               % (dt, c["ack"].get("rtt_ms"), c["ack"].get("detalle")))
     else:
         print("\n  ✘ R1 no actuó en 7 min (¿el HVAC ya estaba en ventilación?)")
+    if "--con-correo" in sys.argv:
+        print("Paso 2b · esperar la alerta de Grafana (webhook a la API + correo al equipo)")
+        t1 = time.time()
+        while time.time() - t1 < 900:
+            al = [a for a in llamar("/api/alertas?n=30")["historial"]
+                  if a.get("origen") == "grafana" and a.get("estado") == "firing" and a["ts"] / 1000 >= t1 - dt - 5]
+            if al:
+                print("  ✔ Grafana: %s · %s → correo enviado al equipo" % (al[0]["regla"], al[0]["mensaje"]))
+                break
+            print("  … %3.0f s esperando a Grafana" % (time.time() - t1), end="\r")
+            time.sleep(10)
 finally:
     print("Paso 3 · quitar la calibración (reset de fábrica del aula-101)")
     comando("aula-101", "reset")

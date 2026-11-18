@@ -1,0 +1,14 @@
+Alertas de Grafana por correo (Brevo SMTP) · 17-nov-2026 (hora de Bogotá)
+Contact point "api-campussense" con dos receptores: webhook a la API (Authorization: Bearer) + email por
+smtp-relay.brevo.com:587 (STARTTLS obligatorio). Destinatarios: los 3 integrantes del grupo (correos UNAB;
+las direcciones están solo en el .env de la VM, no en el repositorio).
+
+1) Correo de prueba del contact point (22:04): enviado y ENTREGADO a los 3 destinatarios (registro de Brevo).
+
+2) Alerta real de punta a punta:
+   22:06:42  calibrar el CO₂ del aula-101 con offset +1200 ppm (MQTT, ACK)
+   22:14:31  la regla de Grafana "CO2 alto Aula 101" pasa a Firing ("Sending alerts to local notifier")
+   22:15:01  la API recibe la alerta por el webhook: "CO2 promedio 5 min en Aula 101: 1629 ppm (umbral 1000)"
+   22:15     Brevo: "[CampusSense UNAB] FIRING · CO2 alto Aula 101" enviado y ENTREGADO a los 3 destinatarios,
+             con primera apertura registrada
+   después   reset de fábrica del aula-101

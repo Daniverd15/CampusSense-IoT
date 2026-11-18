@@ -307,7 +307,7 @@ T([["Decisión", "Alternativa", "Por qué"],
    ["Bus interno retenido", "Que cada consumidor lea cada broker", "Los 5 protocolos se normalizan en un formato; un cliente nuevo recibe el último valor al conectarse"],
    ["ACK con `cmd_id`", "Comandos sin confirmación", "El retroceso se puede demostrar y medir, y la interfaz muestra si el equipo obedeció"],
    ["HTTP con comandos en la respuesta", "Que la plataforma llame al equipo", "Un equipo HTTP real suele estar detrás de NAT; a cambio, la latencia es el intervalo de envío"],
-   ["Reglas en la API y alertas en Grafana", "Solo Grafana", "Las reglas que actúan necesitan enviar comandos con memoria e histéresis; Grafana queda como capa visual y avisa por webhook"],
+   ["Reglas en la API y alertas en Grafana", "Solo Grafana", "Las reglas que actúan necesitan enviar comandos con memoria e histéresis; Grafana queda como capa visual y avisa por webhook y por correo"],
    ["Respaldo Open-Meteo", "Depender solo de Azure Maps", "Cuando la cuenta de Azure Maps se bloqueó (15-nov), los dispositivos de clima y aire siguieron midiendo sin intervención"]],
   [3.9, 3.6, 9.5], tam=8.2)
 
@@ -403,7 +403,7 @@ for t in ["Cada tablero de Grafana tiene paneles *promedio / máx / mín del ran
           "El panel de cada dispositivo grafica de 1 h a 6 días con mínimo, promedio y máximo por variable."]:
     V(t)
 P("**Alertas y reglas.** Hay dos niveles complementarios. **Grafana Alerting** tiene 6 reglas aprovisionadas (CO₂ aula > 1000 ppm 5 min, temperatura aula > 28 °C 10 min, tanque < 20 %, "
-  "PM2.5 laboratorio > 35 µg/m³ 5 min, índice de aire exterior > 100 y dispositivo sin datos) que notifican a la API por *webhook*. El **motor de reglas** de la API evalúa cada 30 s y, además de alertar, **actúa**:")
+  "PM2.5 laboratorio > 35 µg/m³ 5 min, índice de aire exterior > 100 y dispositivo sin datos) que notifican a la API por *webhook* y por **correo electrónico** a los tres integrantes, con Brevo SMTP (`smtp-relay.brevo.com:587` y STARTTLS obligatorio). El **motor de reglas** de la API evalúa cada 30 s y, además de alertar, **actúa**:")
 filas = [["Regla", "Condición", "Acción automática", "Disparos en la ventana"]]
 for rid, cond, acc, clave in [("R1", "CO₂ aula-101 (prom. 5 min) > 1000 ppm; libera < 750", "HVAC → ventilación; al liberar → auto", ("R1 CO2 alto", "reglas")),
                               ("R2", "Demanda Bloque A (prom. 5 min) > 30 kW; libera < 24", "HVAC → eco si estaba en auto (R1 tiene prioridad)", ("R2 Demanda alta", "reglas")),
@@ -547,6 +547,7 @@ T([["Prueba", "Resultado"],
    ["Carrera del ACK", "Un ACK de 8 ms llegaba antes de que la API registrara el comando; se corrigió registrando antes de enviar (de 94/95 a 95/95)"],
    ["Caída de la API del docente (15-nov)", "La cuenta de Azure Maps del docente quedó desactivada (`AccountLocked`); R6 y Grafana alertaron, y se agregó respaldo automático a Open-Meteo, que reintenta Azure Maps cada 6 h"],
    ["Disponibilidad", "11 contenedores sin reinicios durante la toma; 0 huecos en los 6 días"],
+   ["Alertas por correo (17-nov)", "Se calibró el CO₂ del aula-101 a +1200 ppm. A los ~8 min la regla de Grafana «CO2 alto Aula 101» llegó a la API por webhook, y Brevo registró el correo «[CampusSense UNAB] FIRING · CO2 alto Aula 101» como entregado a los 3 integrantes"],
    ["Reinicio de la VM completa (17-nov)", "Sin intervención: HTTPS a los 38 s y los 11 dispositivos con datos nuevos a los 47 s; intervalos, calibraciones, historial y memoria de las reglas intactos (R1 devolvió el HVAC a auto)"]],
   [4.6, 12.4], tam=8.4)
 F(os.path.join(EV, "23-front-retroceso.jpg"), ANCHO * 0.9, "Front · retroceso: camino y tiempo de ida y vuelta por protocolo e historial de comandos con su ACK.")
