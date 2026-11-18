@@ -414,8 +414,8 @@ def reglas():
 
 
 @app.post("/api/alertas/grafana")
-async def webhook_grafana(request: Request, token: str = ""):
-    if token != TOKEN_INGEST:
+async def webhook_grafana(request: Request, authorization: str = Header(default="")):
+    if authorization != "Bearer " + TOKEN_INGEST:
         raise HTTPException(401, "token invalido")
     cuerpo = await request.json()
     for a in cuerpo.get("alerts", []):

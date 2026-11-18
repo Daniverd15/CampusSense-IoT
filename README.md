@@ -18,7 +18,7 @@ actúa solo (por ejemplo: CO₂ alto en el aula → el gemelo HVAC pasa a ventil
 
 ## Entregables
 
-- **Informe:** [`Informe_CampusSense_UNAB.pdf`](Informe_CampusSense_UNAB.pdf) (32 páginas, 27 figuras; fuente en `informe/build_informe.py`).
+- **Informe:** [`Informe_CampusSense_UNAB.pdf`](Informe_CampusSense_UNAB.pdf) (33 páginas, 27 figuras; fuente en `informe/build_informe.py`).
 - **Toma oficial de datos:** 6 días, del 8-nov 23:19 al 14-nov 23:19 (hora de Bogotá) · 150 035 mensajes de 12 dispositivos, sin huecos.
   Exportada en [`mediciones/export/`](mediciones/export) (series CSV, estadísticas, reglas, alertas, perfil horario).
   La plataforma sigue tomando datos en vivo; en el front y en `/api/resumen/<id>?ventana=oficial` se puede ver solo la ventana oficial.
@@ -140,7 +140,9 @@ evidencias/, mediciones/  capturas y salidas reales
 git clone https://github.com/Daniverd15/CampusSense-IoT.git && cd CampusSense-IoT
 cp .env.example .env          # cambiar TODAS las claves y poner el dominio
 docker compose up -d --build
+bash scripts/crear_token_grafana.sh && docker compose up -d grafana   # token de solo lectura para Grafana
 docker compose ps             # 11 contenedores Up (3 healthy)
+python scripts/prueba_humo.py # desde cualquier PC: funcionamiento y seguridad
 ```
 
 ESP32 en Wokwi: `MQTT_USER=esp32 MQTT_PASS=<clave> WOKWI_CLI_TOKEN=<token> ./wokwi/build_y_simular.sh 600`.
@@ -152,6 +154,7 @@ ESP32 en Wokwi: `MQTT_USER=esp32 MQTT_PASS=<clave> WOKWI_CLI_TOKEN=<token> ./wok
 - **MQTT:** QoS 1 con sesión persistente y última voluntad; el ingestor solo confirma después de escribir en InfluxDB.
 - **Estado persistente:** cada dispositivo guarda en un volumen su encendido, intervalo, calibración y estado propio; un reinicio no borra lo que se le ordenó.
 - **Historial:** comandos, ACK y alertas viven en InfluxDB y la API los recupera al arrancar.
+- **Reinicio de la VM completa:** sin intervención, HTTPS vuelve a los 38 s y los 11 dispositivos envían datos nuevos a los 47 s; se conservan intervalos, calibraciones, historial y la memoria de las reglas (`scripts/prueba_reinicio.py`, [evidencia](mediciones/prueba_reinicio_17nov.txt)).
 - **Fuente de respaldo:** si Azure Maps falla (el 15-nov la cuenta del docente empezó a responder `401 AccountLocked`), los dispositivos de clima y aire pasan solos a Open-Meteo, lo marcan en su estado (`fuente: 1`) y cada 6 h vuelven a probar Azure Maps.
 
 ## Seguridad
@@ -159,6 +162,8 @@ ESP32 en Wokwi: `MQTT_USER=esp32 MQTT_PASS=<clave> WOKWI_CLI_TOKEN=<token> ./wok
 - Sin secretos en el repositorio: todas las claves van en `.env` (ignorado por git); `.env.example` solo trae marcadores.
 - Hacia Internet solo quedan 443/80 (Caddy con HTTPS) y 1883 (MQTT con usuario y ACL: el usuario del ESP32 solo puede publicar en sus tópicos).
 - RabbitMQ, InfluxDB y CoAP solo escuchan dentro de la red de Docker. Enviar comandos exige la clave de control.
+- Mínimo privilegio: Grafana lee InfluxDB con un token de **solo lectura** del bucket `campus` (`scripts/crear_token_grafana.sh`; escribir o borrar con él da 403). El webhook de alertas manda su token en la cabecera `Authorization`, no en la URL, para que no quede en los logs ([evidencia](mediciones/endurecimiento_17nov.txt)).
+- Prueba de humo y seguridad desde Internet: **31 de 31** (`scripts/prueba_humo.py`).
 - Del GPS del bus solo se guardan posición, velocidad y baterías (no nombres de conductores ni datos de la SIM).
 
 ## Créditos de datos

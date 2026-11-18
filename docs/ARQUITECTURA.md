@@ -125,6 +125,8 @@ Cada protocolo baja por su propio canal:
 
 - Puertos públicos: 22 (SSH con llave), 80 (solo redirige), 443 y 1883. RabbitMQ, STOMP, InfluxDB, CoAP, Grafana y la API directa no son alcanzables desde Internet (comprobado en `mediciones/prueba_humo_17nov.txt`).
 - MQTT sin acceso anónimo. El usuario del ESP32 solo puede publicar en `campus/tele/esp32-wokwi` y `campus/conexion/esp32-wokwi` y leer `campus/cmd/esp32-wokwi`: suscrito a `campus/#` no recibe nada y no puede suplantar a otro equipo.
-- Comandos con clave (`X-Clave`), ingesta HTTP y webhook de Grafana con token; Grafana anónimo es solo lectura.
+- Comandos con clave (`X-Clave`), ingesta HTTP con token y webhook de Grafana con `Authorization: Bearer` (el token no viaja en la URL ni queda en los logs); Grafana anónimo es solo lectura.
+- Mínimo privilegio en los datos: Grafana usa un token de InfluxDB de solo lectura del bucket `campus` (escribir o borrar → 403); el token de administrador solo existe en los contenedores internos.
+- Resiliencia ante reinicio de la VM: Docker arranca con el sistema y todos los contenedores tienen `restart: unless-stopped`; medido: HTTPS a los 38 s y los 11 dispositivos con datos nuevos a los 47 s, con su estado y la memoria de las reglas intactos.
 - Claves en `.env` (no versionado); `.env.example` trae marcadores.
 - Limitación conocida: MQTT en 1883 va sin TLS (se dejó así para simplificar el firmware simulado); en producción se usaría 8883 con TLS y un certificado por equipo.

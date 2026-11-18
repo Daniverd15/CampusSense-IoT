@@ -546,7 +546,8 @@ T([["Prueba", "Resultado"],
    ["Heartbeats AMQP", "Se corrigió el cierre de conexión cada 5 min; desde el arreglo, 0 cortes en RabbitMQ y la latencia media de AMQP bajó a 3,5 ms"],
    ["Carrera del ACK", "Un ACK de 8 ms llegaba antes de que la API registrara el comando; se corrigió registrando antes de enviar (de 94/95 a 95/95)"],
    ["Caída de la API del docente (15-nov)", "La cuenta de Azure Maps del docente quedó desactivada (`AccountLocked`); R6 y Grafana alertaron, y se agregó respaldo automático a Open-Meteo, que reintenta Azure Maps cada 6 h"],
-   ["Disponibilidad", "11 contenedores sin reinicios durante la toma; 0 huecos en los 6 días"]],
+   ["Disponibilidad", "11 contenedores sin reinicios durante la toma; 0 huecos en los 6 días"],
+   ["Reinicio de la VM completa (17-nov)", "Sin intervención: HTTPS a los 38 s y los 11 dispositivos con datos nuevos a los 47 s; intervalos, calibraciones, historial y memoria de las reglas intactos (R1 devolvió el HVAC a auto)"]],
   [4.6, 12.4], tam=8.4)
 F(os.path.join(EV, "23-front-retroceso.jpg"), ANCHO * 0.9, "Front · retroceso: camino y tiempo de ida y vuelta por protocolo e historial de comandos con su ACK.")
 P("**Lazo cerrado de extremo a extremo (17-nov).** `scripts/demo_regla.py` une calibración, regla y retroceso en una sola prueba contra la URL pública. Primero se "
@@ -561,8 +562,10 @@ T([["Grupo", "Qué se comprobó", "Resultado"],
    ["Puertos", "Abiertos: 443 y 1883. Cerrados: 5672, 61613, 15672, 8086, 3000, 8000 y 8081", "9 de 9"],
    ["MQTT", "Anónimo y clave falsa rechazados (CONNACK 5). El ESP32 suscrito a `campus/#` no recibe nada, no ve los comandos de otro equipo y no puede suplantar al aula-101", "7 de 7"],
    ["API y Grafana", "Comando sin clave o con clave falsa, ingesta y webhook sin token: 401. Grafana anónimo no puede crear tableros: 403", "5 de 5"],
+   ["Datos (mínimo privilegio)", "Grafana lee InfluxDB con un token de solo lectura del bucket `campus`: leer 200; escribir o borrar 403", "OK"],
    ["Retroceso", "Comando MQTT real al aula-101 desde Internet", "ACK en 2 ms; ida y vuelta completa en 1,2 s"]],
   [2.6, 10.6, 3.8], tam=8.3)
+P("El webhook de alertas de Grafana manda su token en la cabecera `Authorization: Bearer` y no en la URL, para que no quede registrado en los logs de acceso; se probó con una alerta real de CO₂ que llegó a la API. ", tam=9.0, cursiva=True)
 P("Mosquitto 2 concede cualquier suscripción y aplica la ACL al entregar cada mensaje. Por eso la prueba de la ACL no mira la respuesta a la suscripción: "
   "cuenta los mensajes que realmente llegan, y los compara con un usuario de la plataforma que en el mismo lapso sí recibe 35.", tam=9.0, cursiva=True)
 

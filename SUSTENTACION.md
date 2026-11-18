@@ -58,6 +58,12 @@
   - AMQP y HTTP: guardar y reenviar (cola de 2000 mensajes).
   - El estado de cada dispositivo vive en un volumen.
   - Se probó reiniciando la API: no se perdieron datos.
+- **¿Qué pasa si se reinicia la VM?**
+  - Se probó: todo vuelve solo.
+  - HTTPS a los 38 s y los 11 dispositivos con datos nuevos a los 47 s.
+  - Se conservan los intervalos, las calibraciones, el historial y la memoria de las reglas.
+  - Evidencia: `mediciones/prueba_reinicio_17nov.txt`.
+- **¿Grafana puede dañar los datos?** No: lee InfluxDB con un token de solo lectura, y escribir o borrar con él da 403 (`mediciones/endurecimiento_17nov.txt`).
 - **¿Cómo se ajusta el tiempo?**
   - Cada mensaje trae `ts` en milisegundos UTC y `seq`; InfluxDB guarda en UTC y Grafana muestra en hora de Bogotá.
   - `aggregateWindow` agrega en ventanas según el rango.

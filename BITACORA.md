@@ -54,7 +54,7 @@ El detalle técnico de cada decisión está en [docs/ARQUITECTURA.md](docs/ARQUI
 - Exportación de la ventana oficial a `mediciones/export/`: series, estadísticas, reglas, alertas y perfil horario.
 - Prueba formal de retroceso en los 6 caminos (`mediciones/prueba_retroceso.json`). Solo se mandaron comandos que no cambian nada, como volver a poner el intervalo de fábrica.
 - Segunda sesión del ESP32: 10 de 10 ACK, con un RTT mediano de 81 ms.
-- Informe de 32 páginas generado como código (`informe/build_informe.py`). Antes de cerrarlo se comprobó cada cifra del análisis contra los datos.
+- Informe de 33 páginas generado como código (`informe/build_informe.py`). Antes de cerrarlo se comprobó cada cifra del análisis contra los datos.
 - Prueba de humo y seguridad desde Internet (`scripts/prueba_humo.py`): **31 de 31 correctas** (`mediciones/prueba_humo_17nov.txt`).
 - Documentación: arquitectura con decisiones, bitácora, evidencias y guion de sustentación.
 
@@ -66,6 +66,19 @@ El detalle técnico de cada decisión está en [docs/ARQUITECTURA.md](docs/ARQUI
 - Un despliegue de la API con la constante de la ventana debajo de su primer uso causó un `SyntaxError`, y la API estuvo caída unos 2 minutos. Guardar y reenviar evitó perder datos. Desde entonces se valida antes de desplegar.
 - El front mostraba "8,53 días" y solo los últimos 80 comandos. Ahora muestra "6 días · completada" y el total real desde el 8-nov.
 - Las primeras pruebas de ACL dieron un falso fallo: Mosquitto 2 concede la suscripción y aplica la ACL al entregar cada mensaje. La prueba se cambió para contar los mensajes que realmente llegan.
+
+## 2026-11-17 (noche) · Endurecimiento tras comparar con otro proyecto del curso
+
+**Hecho**
+- Revisión del repositorio de laboratorios de un compañero: su Lab 5 usaba un token de solo lectura para Grafana y tenía una prueba de reinicio de la VM. Adoptamos las dos ideas.
+- **Grafana con token de solo lectura** (`scripts/crear_token_grafana.sh`). Leer da 200; escribir o borrar da 403; no puede ver otros tokens. Antes usaba el token de administrador, aunque el comentario del datasource decía que solo leía.
+- **Prueba de reinicio de la VM** (`scripts/prueba_reinicio.py`). Sin intervención, HTTPS volvió a los 38 s y los 11 dispositivos enviaron datos a los 47 s. Se conservaron los intervalos, el historial y la memoria de R1, que devolvió el HVAC a auto.
+- Prueba de humo repetida al final: 31 de 31.
+
+**Problemas y soluciones**
+- El log de acceso de la API imprimía el token de ingesta, porque Grafana lo mandaba en la URL del webhook (`?token=`). Ahora va en la cabecera `Authorization: Bearer`. Se probó de punta a punta con una alerta real de Grafana, que llegó a los 512 s.
+- La primera versión de la prueba de reinicio daba «en línea a los 39 s» con los valores retenidos de antes. Se corrigió para medir el primer dato con marca de tiempo posterior al reinicio.
+- La prueba de permisos daba 401 en todo porque `cut -d= -f2` cortaba el `==` final del token. Se cambió por `cut -d= -f2-`.
 
 ## Pendiente
 

@@ -1,0 +1,39 @@
+Prueba de reinicio de la VM · 2026-11-18
+
+02:40:32  antes: 11/12 en línea · HVAC modo=2.0 · uptime VM: up 13 minutes
+02:40:32  reiniciando la VM (sudo reboot)…
+02:41:22  HTTPS y API de vuelta a los 38 s
+02:41:22     primer dato nuevo de api-clima-unab     a los   34 s
+02:41:22     primer dato nuevo de api-aire-unab      a los   36 s
+02:41:22     primer dato nuevo de twin-hvac-aula101  a los   37 s
+02:41:22     primer dato nuevo de twin-panel-solar   a los   37 s
+02:41:22     primer dato nuevo de twin-tanque-agua   a los   37 s
+02:41:22     primer dato nuevo de aula-101           a los   37 s
+02:41:22     primer dato nuevo de lab-quimica        a los   37 s
+02:41:22     primer dato nuevo de medidor-bloque-a   a los   37 s
+02:41:22     primer dato nuevo de api-bus-ruta1      a los   38 s
+02:41:22     primer dato nuevo de ds-ocupacion-uci   a los   47 s
+02:41:22     primer dato nuevo de ds-aire-uci        a los   47 s
+02:41:22  los 11 dispositivos permanentes enviaron datos nuevos a los 47 s
+02:42:23  estado conservado: intervalo igual en 12/12 dispositivos · HVAC modo 2.0 → 2.0
+02:42:24  historial recuperado por la API: 334 comandos desde el 8-nov
+02:42:24  contador seq: siguió en 0/12; los demás lo reinician con su contenedor (cada dato se ordena por su ts)
+02:42:26  contenedores después del reinicio:
+campus-api-1 Up About a minute
+campus-caddy-1 Up About a minute
+campus-dev-apis-1 Up About a minute
+campus-dev-datasets-1 Up About a minute
+campus-dev-gemelos-1 Up About a minute
+campus-dev-reales-1 Up About a minute
+campus-grafana-1 Up About a minute
+campus-influxdb-1 Up About a minute (healthy)
+campus-ingestor-1 Up About a minute
+campus-mosquitto-1 Up About a minute (healthy)
+campus-rabbitmq-1 Up About a minute (healthy)
+02:42:28  uptime VM: up 1 minute
+02:42:28  RESULTADO: sin intervención; HTTPS a los 38 s y los 11 dispositivos con datos nuevos a los 47 s
+
+Memoria de las reglas: antes del reinicio la regla R1 había mandado el HVAC a ventilación (modo 2).
+Al arrancar, la API reconstruyó desde InfluxDB que R1 estaba activa; tras los 90 s de llenado de ventanas
+vio el CO₂ normalizado y devolvió el HVAC a auto por CoAP (02:42:38 UTC, regla R1, con ACK), sin intervención.
+Primera corrida de la prueba (02:27 UTC): mismo comportamiento; R1 devolvió el HVAC a auto a las 02:29:16.

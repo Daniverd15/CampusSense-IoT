@@ -1,0 +1,24 @@
+Mínimo privilegio: Grafana lee InfluxDB con un token de SOLO LECTURA (17-nov-2026, en la VM)
+Creado con scripts/crear_token_grafana.sh: influx auth create --org unab --read-bucket <campus> (88 caracteres)
+Antes: Grafana usaba el token de administrador de InfluxDB.
+
+Prueba con el token de Grafana contra la API de InfluxDB (dentro de la red de Docker):
+leer (query Flux sobre campus)            HTTP 200
+escribir en el bucket campus              HTTP 403
+borrar datos del bucket campus            HTTP 403
+listar tokens (/api/v2/authorizations)    HTTP 200 con 0 autorizaciones visibles: no expone el token de administrador
+
+Después del cambio: grafana/verificar_paneles.py 24  ->  paneles con problema: 0
+
+----------------------------------------------------------------------------------------------
+Token del webhook de alertas en cabecera, no en la URL (17-nov-2026)
+Antes: Grafana llamaba a /api/alertas/grafana?token=<INGEST_TOKEN>; el log de acceso de la API (uvicorn)
+imprimía la URL completa, y con ella el token.
+Ahora: contact point webhook con authorization_scheme Bearer + authorization_credentials; la API exige
+"Authorization: Bearer <token>".
+  POST con cabecera correcta                         HTTP 200
+  POST con el token en la URL (método viejo)        HTTP 401
+  POST sin token                                     HTTP 401
+Prueba de punta a punta: calibrar el CO₂ del aula-101 (+1200 ppm) → la regla de Grafana «CO2 alto Aula 101»
+pasó a firing y llegó a la API por el webhook nuevo a los 512 s ("CO2 promedio 5 min en Aula 101: 1636 ppm
+(umbral 1000)"); después se hizo un reset de fábrica del aula.

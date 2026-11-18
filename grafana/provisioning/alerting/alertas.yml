@@ -9,7 +9,9 @@ contactPoints:
         type: webhook
         disableResolveMessage: false
         settings:
-          url: http://api:8000/api/alertas/grafana?token=$INGEST_TOKEN
+          url: http://api:8000/api/alertas/grafana
+          authorization_scheme: Bearer
+          authorization_credentials: $INGEST_TOKEN   # en cabecera: no queda en los logs de acceso
           httpMethod: POST
 
 policies:
